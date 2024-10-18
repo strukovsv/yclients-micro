@@ -1,0 +1,25 @@
+# Это файл запуска процесса на stage
+version: "3"
+
+services:
+
+  app:
+    container_name: micro_fastapi
+    build:
+      context: .
+    volumes:
+      - ./src/micro:/app/micro
+      - ./tests:/app/tests
+      # - ./tests:/app/tests
+      - ./log:/tmp/log
+      # - ./logger-plain.conf:/conf/logger.conf
+      - ./logger-plain.conf:/conf/logger-plain.conf
+      - ./changelog.md:/app/changelog.md
+    ports:
+      - 8001:8001
+    env_file:  .env-stage
+    # command: bash -c "python -m main"
+    # command: bash -c "python -m pytest"
+    #command: bash -c "python -m pytest test_orm.py"
+    # command: bash -c "dir /app && dir /app/tests"
+    command: bash -c "gunicorn tests.test:app --timeout 86400 --workers 1 --worker-class uvicorn.workers.UvicornWorker --log-config /conf/logger-plain.conf --bind 0.0.0.0:8001"

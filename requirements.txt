@@ -1,0 +1,10 @@
+fastapi==0.98.0
+fastapi-utils==0.2.1
+starlette-exporter==0.16.0
+prometheus-client==0.17.0
+asyncio==3.4.3
+python-json-logger==2.0.7
+httpx==0.27.2
+aiokafka==0.11.0
+psycopg[binary,pool]==3.1.9
+yoyo-migrations==8.2.0
