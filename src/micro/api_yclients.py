@@ -131,10 +131,11 @@ class Yclients(metaclass=MetaSingleton):
                 # Запросить в API
                 for i in range(0, 3):
                     try:
+                        url = self.url(url)
                         if method == "get":
                             API_YCLIENTS_GET_REQUEST_CNT.inc()
                             r = await client.get(
-                                self.url(url),
+                                url,
                                 headers=_headers,
                                 params=params,
                                 timeout=10.0,
@@ -142,7 +143,7 @@ class Yclients(metaclass=MetaSingleton):
                         else:
                             API_YCLIENTS_POST_REQUEST_CNT.inc()
                             r = await client.post(
-                                self.url(url),
+                                url,
                                 headers=_headers,
                                 json=params,
                                 timeout=10.0,
@@ -152,8 +153,8 @@ class Yclients(metaclass=MetaSingleton):
                     except Exception as e:
                         # Получить user token
                         if i < 3:
-                            logger.error(
-                                f'attempt: "{i}", error: "{e}", url: "{r.url}"'
+                            logger.debug(
+                                f'attempt: "{i}", error: "{e}", url: "{url}"'
                             )
                             await asyncio.sleep(10)
                             continue
