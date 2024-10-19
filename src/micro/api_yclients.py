@@ -187,16 +187,19 @@ class Yclients(metaclass=MetaSingleton):
                 #     logger.error(f'to_json: "{e=}"')
                 #     raise
                 rows = js["data"]
-                if isinstance(rows, list):
-                    records.extend(rows)
-                    # Если строк вернули, меньше чем запросили,
-                    # то завершить чтение
-                    if not pagination:
-                        break
-                    if len(rows) < page_count:
+                if rows:
+                    if isinstance(rows, list):
+                        records.extend(rows)
+                        # Если строк вернули, меньше чем запросили,
+                        # то завершить чтение
+                        if not pagination:
+                            break
+                        if len(rows) < page_count:
+                            break
+                    else:
+                        records.append(rows)
                         break
                 else:
-                    records.append(rows)
                     break
             if obj_name and self.is_create_yaml:
                 # Получено записей
