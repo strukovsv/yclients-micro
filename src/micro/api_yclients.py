@@ -129,7 +129,7 @@ class Yclients(metaclass=MetaSingleton):
                 start = datetime.datetime.now()
                 # logger.info(f"{self.url(url)=} {params=}")
                 # Запросить в API
-                for i in range(0, 3):
+                for i in range(0, 4):
                     try:
                         __url__ = self.url(url)
                         if method == "get":
@@ -149,44 +149,37 @@ class Yclients(metaclass=MetaSingleton):
                                 timeout=10.0,
                             )
                         js = r.json()
+                        if not js["success"]:
+                            raise Exception(js["meta"]["message"])
+                        rows = js["data"]
                         break
                     except Exception as e:
                         # Получить user token
                         if i < 3:
                             logger.debug(
-                                f'attempt: "{i}", error: "{e}", url: "{__url__}"'
+                                f'attempt: "{i}", error: "{e}", url: "{__url__}"'  # noqa
                             )
+                            # await asyncio.sleep(10)
                             await asyncio.sleep(10)
                             continue
                         try:
-                            API_YCLIENTS_REQUEST_ERROR_CNT.inc()
-                            logger.error(f'httpx: "{r.url=}"')
-                            logger.error(f'httpx: "{r.text=}"')
-                        except Exception as xe:
-                            logger.error(xe)
-                        logger.error(e)
-                        raise
+                            response = r.text
+                        except Exception:
+                            response = None
+                        API_YCLIENTS_REQUEST_ERROR_CNT.inc()
+                        raise Exception(
+                            f'httpx url: "{method} + {__url__}", response: "{response}", message: "{e}"'  # noqa
+                        )
                 # Поспать немного.
-                # Один запрос, не менее 0.3 сек
-                # Осталось от одной секунды,
-                # по факту нужно перенести в fastapi loop
-                duration = (datetime.datetime.now() - start).total_seconds()
-                remain = 1.0 - duration
+                # Один запрос, не менее 1 сек
+                # Осталось до одной секуды
+                remain = (
+                    1.0 - (datetime.datetime.now() - start).total_seconds()
+                )
                 if remain > 0:
-                    # logger.info(f"sleep: {duration=}, {remain=}")
                     logger.debug(f"sleep remain: {remain}")
+                    # В linux периоды можно задать меньше одной секунды
                     await asyncio.sleep(remain)
-                # # Получить строки данных
-                # try:
-                #     js = r.json()
-                # except Exception as e:
-                #     REQUEST_ERROR_CNT.inc()
-                #     ## Получить user token
-                #     logger.error(f'to_json: "{r.url=}"')
-                #     logger.error(f'to_json: "{r.text=}"')
-                #     logger.error(f'to_json: "{e=}"')
-                #     raise
-                rows = js["data"]
                 if rows:
                     if isinstance(rows, list):
                         records.extend(rows)
@@ -201,12 +194,6 @@ class Yclients(metaclass=MetaSingleton):
                         break
                 else:
                     break
-            if obj_name and self.is_create_yaml:
-                # Получено записей
-                logger.debug(f'save obj: "{obj_name}" records: {len(records)}')
-                # Сохранить в отладку
-                # save_yaml(records, obj_name)
-            # Вернуть записи, для последующей обработки
             return records
 
     async def get_records(self, start_date, end_date, ids=None):
