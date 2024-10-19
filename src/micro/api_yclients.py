@@ -127,15 +127,15 @@ class Yclients(metaclass=MetaSingleton):
                 params["count"] = page_count
                 # Зафиксировать время запроса
                 start = datetime.datetime.now()
-                logger.debug(f"{self.url(url)=}")
+                # logger.info(f"{self.url(url)=} {params=}")
                 # Запросить в API
                 for i in range(0, 3):
                     try:
-                        url = self.url(url)
+                        __url__ = self.url(url)
                         if method == "get":
                             API_YCLIENTS_GET_REQUEST_CNT.inc()
                             r = await client.get(
-                                url,
+                                __url__,
                                 headers=_headers,
                                 params=params,
                                 timeout=10.0,
@@ -143,7 +143,7 @@ class Yclients(metaclass=MetaSingleton):
                         else:
                             API_YCLIENTS_POST_REQUEST_CNT.inc()
                             r = await client.post(
-                                url,
+                                __url__,
                                 headers=_headers,
                                 json=params,
                                 timeout=10.0,
@@ -154,7 +154,7 @@ class Yclients(metaclass=MetaSingleton):
                         # Получить user token
                         if i < 3:
                             logger.debug(
-                                f'attempt: "{i}", error: "{e}", url: "{url}"'
+                                f'attempt: "{i}", error: "{e}", url: "{__url__}"'
                             )
                             await asyncio.sleep(10)
                             continue
