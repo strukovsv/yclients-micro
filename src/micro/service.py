@@ -23,7 +23,8 @@ log = logging.getLogger()
 app = None
 
 sentry_sdk.init(
-    server_name=config.SUMMARY,
+    server_name=os.environ.get("SENTRY_SERVER", None),
+    max_breadcrumbs=10,
 )
 
 
@@ -55,7 +56,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="fastapi",
     lifespan=lifespan,
-    openapi_url="/openapi.json" if config.OPENAPI else "",
+    openapi_url="/openapi.json" if os.environ.get("OPENAPI", None) else "",
 )
 
 app.add_middleware(PrometheusMiddleware)
