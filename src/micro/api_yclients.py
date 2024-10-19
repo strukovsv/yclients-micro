@@ -181,7 +181,7 @@ class Yclients(metaclass=MetaSingleton):
                 #     js = r.json()
                 # except Exception as e:
                 #     REQUEST_ERROR_CNT.inc()
-                #     # Получить user token
+                #     ## Получить user token
                 #     logger.error(f'to_json: "{r.url=}"')
                 #     logger.error(f'to_json: "{r.text=}"')
                 #     logger.error(f'to_json: "{e=}"')
