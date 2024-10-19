@@ -16,8 +16,6 @@ import sentry_sdk
 
 from .utils import hide_passwords
 
-import config
-
 log = logging.getLogger()
 
 app = None
