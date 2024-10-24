@@ -127,7 +127,7 @@ class Yclients(metaclass=MetaSingleton):
                 params["count"] = page_count
                 # Зафиксировать время запроса
                 start = datetime.datetime.now()
-                # logger.info(f"{self.url(url)=} {params=}")
+                #logger.info(f"{self.url(url)=} {params=}")
                 # Запросить в API
                 for i in range(0, 4):
                     try:
@@ -196,16 +196,6 @@ class Yclients(metaclass=MetaSingleton):
                     break
             return records
 
-    async def get_records(self, start_date, end_date, ids=None):
-        return await self.load_object(
-            obj_name="records",
-            url=f"records/{self.company_id}",
-            params={
-                "start_date": start_date,
-                "end_date": end_date,
-            },
-        )
-
     async def write_transaction(self, params: dict):
         _headers = await self.auth()
         async with httpx.AsyncClient() as client:
@@ -254,6 +244,27 @@ class Yclients(metaclass=MetaSingleton):
             },
         )
         logger.debug(f"get_records_after {changed_after}, rows: {len(rows)}")
+        return rows
+
+    async def get_records(self, start_date, end_date, ids=None):
+        """Записи за период
+
+        :param _type_ start_date: _description_
+        :param _type_ end_date: _description_
+        :return _type_: _description_
+        """
+        rows = await self.load_object(
+            obj_name="records",
+            url=f"records/{self.company_id}",
+            params={
+                "start_date": start_date,
+                "end_date": end_date,
+                "include_consumables": 1,
+                "include_finance_transactions": 1,
+                "with_deleted": 1,
+            },
+        )
+        logger.debug(f"get_records {start_date}-{end_date}, rows: {len(rows)}")
         return rows
 
     async def get_cards(self, start_date, end_date, ids=None):
