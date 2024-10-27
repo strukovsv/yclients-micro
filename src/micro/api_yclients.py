@@ -230,7 +230,12 @@ class Yclients(metaclass=MetaSingleton):
                 json=params,
                 timeout=10.0,
             )
-        return r.json()
+        try:
+            return r.json()
+        except Exception:
+            logger.info(f'error in activity: {params=}')
+            logger.info(f'error in activity: {r.text=}')
+            raise
 
     async def get_records_after(self, changed_after):
         rows = await self.load_object(
