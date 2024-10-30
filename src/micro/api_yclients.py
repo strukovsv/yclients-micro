@@ -2,6 +2,7 @@ import logging
 import httpx
 import asyncio
 import datetime
+import os
 
 import config
 
@@ -35,11 +36,15 @@ class Yclients(metaclass=MetaSingleton):
     partner_token: str = None
     headers_partner: str = None
     headers_user: str = None
+    # Включен режим отладки
+    debug: bool = None
 
     def __init__(self, is_create_yaml: bool = None):
         self.chain_id = config.CHAIN_ID
         self.company_id = config.COMPANY_ID
         self.is_create_yaml = is_create_yaml
+        # Включен режим отладки, не отправляем данные в yclient
+        self.debug = str(os.environ.get("YCLIENTS_DEBUG", "0")) == "1"
 
     def url(self, com):
         return f"https://api.yclients.com/api/v1/{com}"
@@ -127,7 +132,7 @@ class Yclients(metaclass=MetaSingleton):
                 params["count"] = page_count
                 # Зафиксировать время запроса
                 start = datetime.datetime.now()
-                #logger.info(f"{self.url(url)=} {params=}")
+                # logger.info(f"{self.url(url)=} {params=}")
                 # Запросить в API
                 for i in range(0, 4):
                     try:
@@ -197,45 +202,55 @@ class Yclients(metaclass=MetaSingleton):
             return records
 
     async def write_transaction(self, params: dict):
-        _headers = await self.auth()
-        async with httpx.AsyncClient() as client:
-            API_YCLIENTS_POST_REQUEST_CNT.inc()
-            r = await client.post(
-                self.url(f"finance_transactions/{self.company_id}"),
-                headers=_headers,
-                json=params,
-                timeout=10.0,
-            )
-        return r.json()
+        if self.debug:
+            logger.info(f'debug "write_transaction" with params: {params}')
+            return {"success": True}
+        else:
+            _headers = await self.auth()
+            async with httpx.AsyncClient() as client:
+                API_YCLIENTS_POST_REQUEST_CNT.inc()
+                r = await client.post(
+                    self.url(f"finance_transactions/{self.company_id}"),
+                    headers=_headers,
+                    json=params,
+                    timeout=10.0,
+                )
+            return r.json()
 
     async def delete_activity(self, params: dict):
-        _headers = await self.auth()
-        activity_id = params["activity_id"]
-        async with httpx.AsyncClient() as client:
-            API_YCLIENTS_DELETE_REQUEST_CNT.inc()
-            r = await client.delete(
-                self.url(f"activity/{self.company_id}/{activity_id}"),
-                headers=_headers,
-                timeout=10.0,
-            )
-        return r.json()
+        if self.debug:
+            logger.info(f'debug "delete_activity" with params: {params}')
+            return {"success": True}
+        else:
+            _headers = await self.auth()
+            activity_id = params["activity_id"]
+            async with httpx.AsyncClient() as client:
+                API_YCLIENTS_DELETE_REQUEST_CNT.inc()
+                r = await client.delete(
+                    self.url(f"activity/{self.company_id}/{activity_id}"),
+                    headers=_headers,
+                    timeout=10.0,
+                )
+            return r.json()
 
     async def write_activity(self, params: dict):
-        _headers = await self.auth()
-        async with httpx.AsyncClient() as client:
-            API_YCLIENTS_POST_REQUEST_CNT.inc()
-            r = await client.post(
-                self.url(f"activity/{self.company_id}"),
-                headers=_headers,
-                json=params,
-                timeout=10.0,
-            )
-        try:
-            return r.json()
-        except Exception:
-            logger.info(f'error in activity: {params=}')
-            logger.info(f'error in activity: {r.text=}')
-            raise
+        if self.debug:
+            logger.info(f'debug "write_activity" with params: {params}')
+            return {"success": True}
+        else:
+            _headers = await self.auth()
+            async with httpx.AsyncClient() as client:
+                API_YCLIENTS_POST_REQUEST_CNT.inc()
+                r = await client.post(
+                    self.url(f"activity/{self.company_id}"),
+                    headers=_headers,
+                    json=params,
+                    timeout=10.0,
+                )
+            try:
+                return r.json()
+            except Exception as e:
+                raise Exception(f"{e}, {params=}, {r.text=}")
 
     async def get_records_after(self, changed_after):
         rows = await self.load_object(
