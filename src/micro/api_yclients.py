@@ -44,7 +44,7 @@ class Yclients(metaclass=MetaSingleton):
         self.company_id = config.COMPANY_ID
         self.is_create_yaml = is_create_yaml
         # Включен режим отладки, не отправляем данные в yclient
-        self.debug = str(os.environ.get("YCLIENTS_DEBUG", "0")) == "1"
+        self.debug = str(os.environ.get("YCLIENTS_DEBUG", "0")) != "0"
 
     def url(self, com):
         return f"https://api.yclients.com/api/v1/{com}"
