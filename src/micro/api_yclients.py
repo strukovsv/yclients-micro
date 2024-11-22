@@ -46,6 +46,44 @@ class Yclients(metaclass=MetaSingleton):
         # Включен режим отладки, не отправляем данные в yclient
         self.debug = str(os.environ.get("YCLIENTS_DEBUG", "0")) != "0"
 
+    def imobis_url(self, com):
+        return f"https://api.fromni.com/user/{com}"
+
+    async def imobis_post(self, url):
+        logger.debug("imobis post !!!")
+        async with httpx.AsyncClient() as client:
+            # Сформировать заголовок для авторизации imobis
+            self.headers_imobis = {
+                "Authorization": f"Token {config.IMOBIS_TOKEN}",
+                "Content-Type": "application/json",
+            }
+            logger.debug(f"{self.headers_partner=}")
+            # Авторизоваться в системе
+            try:
+                API_YCLIENTS_POST_REQUEST_CNT.inc()
+                r = await client.post(
+                    self.imobis_url(url),
+                    headers=self.headers_imobis,
+                    timeout=10.0,
+                )
+            except Exception as e:
+                API_YCLIENTS_REQUEST_ERROR_CNT.inc()
+                # Получить user token
+                logger.error(f"{e=}")
+                logger.error(f"{self.imobis_url(url)=}")
+                logger.error(f"{self.headers_imobis=}")
+                logger.error(r.text)
+                raise
+            try:
+                result = r.json()
+            except Exception as e:
+                API_YCLIENTS_REQUEST_ERROR_CNT.inc()
+                # Получить user token
+                logger.error(r.text)
+                logger.error(e)
+                raise
+            return result
+
     def url(self, com):
         return f"https://api.yclients.com/api/v1/{com}"
 
