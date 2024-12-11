@@ -192,7 +192,15 @@ async def update(table_name: str, id: int, js: dict, func=None) -> str:
 
 
 async def select(template: str, **kwarg):
-    sql_text = sql.get_template(template).render(**kwarg)
+    template_path = kwarg.get("template_path", None)
+    if template_path:
+        logger.info(f'{template_path=} {template=}')
+        sql_template = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_path)
+        )
+        sql_text = sql_template.get_template(template).render(**kwarg)
+    else:
+        sql_text = sql.get_template(template).render(**kwarg)
     data = await fetchall(sql_text)
     # logger.info(f'{template=} {data=} {sql_text=}')
     if kwarg.get("as_classic_rows", None):

@@ -325,6 +325,21 @@ class Yclients(metaclass=MetaSingleton):
         logger.debug(f"get_records {start_date}-{end_date}, rows: {len(rows)}")
         return rows
 
+    async def get_record(self, id):
+        """Запись
+        :param _type_ id: _description_
+        :return _type_: _description_
+        """
+        rows = await self.load_object(
+            obj_name="records",
+            url=f"record/{self.company_id}/{id}",
+            params={
+                "include_consumables": 1,
+                "include_finance_transactions": 1,
+            },
+        )
+        return rows
+
     async def get_cards(self, start_date, end_date, ids=None):
         rows = await self.load_object(
             obj_name="cards",
