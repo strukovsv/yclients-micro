@@ -211,7 +211,7 @@ class Yclients(metaclass=MetaSingleton):
                             response = None
                         API_YCLIENTS_REQUEST_ERROR_CNT.inc()
                         raise Exception(
-                            f'httpx url: "{method} + {__url__}", response: "{response}", message: "{e}"'  # noqa
+                            f'httpx url: "{method} + {__url__}", response: "{response}", message: "{e}", params: "{params}"'  # noqa
                         )
                 # Поспать немного.
                 # Один запрос, не менее 1 сек
@@ -350,6 +350,16 @@ class Yclients(metaclass=MetaSingleton):
             },
         )
         logger.debug(f"get_cards {start_date}-{end_date}, rows: {len(rows)}")
+        return rows
+
+    async def get_card(self, id):
+        rows = await self.load_object(
+            obj_name="cards",
+            url=f"chain/{self.chain_id}/loyalty/abonements",
+            params={
+                "abonements_ids": id,
+            },
+        )
         return rows
 
     async def get_staff(self, start_date, end_date, ids=None):
