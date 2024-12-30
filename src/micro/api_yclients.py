@@ -269,7 +269,7 @@ class Yclients(metaclass=MetaSingleton):
                     ),
                     headers=_headers,
                     json={
-                        "period": params["period_id"],
+                        "period": params["period"],
                         "period_unit_id": params["period_unit_id"],
                     },
                     timeout=10.0,
