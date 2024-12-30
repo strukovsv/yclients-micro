@@ -255,6 +255,27 @@ class Yclients(metaclass=MetaSingleton):
                 )
             return r.json()
 
+    async def card_set_period(self, params: dict):
+        if self.debug:
+            logger.info(f'debug "card_set_period" with params: {params}')
+            return {"success": True}
+        else:
+            _headers = await self.auth()
+            async with httpx.AsyncClient() as client:
+                API_YCLIENTS_POST_REQUEST_CNT.inc()
+                r = await client.post(
+                    self.url(
+                        f'chain/{self.chain_id}/loyalty/abonements/{params["card_id"]}/set_period'  # noqa
+                    ),
+                    headers=_headers,
+                    json={
+                        "period": params["period_id"],
+                        "period_unit_id": params["period_unit_id"],
+                    },
+                    timeout=10.0,
+                )
+            return r.json()
+
     async def delete_activity(self, params: dict):
         if self.debug:
             logger.info(f'debug "delete_activity" with params: {params}')
