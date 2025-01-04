@@ -1,4 +1,5 @@
 import logging
+import re
 
 from .restdb import get_data
 from .utils import get_period
@@ -35,3 +36,32 @@ async def to_prettytable(rows: list, **kwarg) -> str:
 
 async def to_text(template: str, **kwarg) -> str:
     return templates.get_template(template).render(**kwarg)
+
+
+async def csv2list(filename: str) -> list:
+    # Получить шаблон расписания
+    csv = await to_text(filename)
+    #
+    r = re.compile(
+        r"""
+        \s*                # Any whitespace.
+        (                  # Start capturing here.
+        [^,"']+?         # Either a series of non-comma non-quote characters.
+        |                # OR
+        "(?:             # A double-quote followed by a string of characters...
+            [^"\\]|\\.   # That are either non-quotes or escaped...
+        )*              # ...repeated any number of times.
+        "                # Followed by a closing double-quote.
+        |                # OR
+        '(?:[^'\\]|\\.)*'# Same as above, for single quotes.
+        )                  # Done capturing.
+        \s*                # Allow arbitrary space before the comma.
+        (?:,|$)            # Followed by a comma or the end of a string.
+        """,
+        re.VERBOSE,
+    )
+    result = []
+    for line in csv.split("\n"):
+        if line:
+            result.append([elem.replace('"', "") for elem in r.findall(line)])
+    return result
