@@ -6,8 +6,9 @@ import yoyo
 
 logger = logging.getLogger(__name__)
 
+import .config
 
-async def execute(config):
+async def execute(_config):
     """
     Запустить миграцию БД
     """

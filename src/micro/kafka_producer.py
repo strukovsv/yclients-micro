@@ -4,11 +4,11 @@ import datetime
 
 from aiokafka import AIOKafkaProducer
 
-import config
+from micro.singleton import MetaSingleton
+
+import micro.config as config
 
 logger = logging.getLogger(__name__)
-
-producer = None
 
 
 def serialize_datetime(obj):
@@ -16,7 +16,7 @@ def serialize_datetime(obj):
         return obj.isoformat()
 
 
-class KafkaProducer(AIOKafkaProducer):
+class KafkaProducer(AIOKafkaProducer, metaclass=MetaSingleton):
 
     def __init__(self):
         if config.PRODUCER_KAFKA["bootstrap_servers"]:
@@ -36,20 +36,29 @@ class KafkaProducer(AIOKafkaProducer):
             ).encode(),
         )
 
+    async def send_event(self, message: dict, event: str = None):
+        js = message.copy()
+        if "message_id" not in js:
+            js["message_id"] = (
+                config.PRODUCER_ID + "-" + datetime.datetime.now().isoformat()
+            )
+        event = event if event else js.get("answer", None)
+        if event:
+            if js.get("event", None):
+                js["events"] = js.get("events", []) + [js["event"]]
+            js["event"] = event
+            message_id = js["message_id"]
+            #        logger.info(f'send message "{message_id}" to "{event}", data: {js}')
+            # Кратко распечатать 200 символов json
+            js_example = {
+                key: value
+                for key, value in js.items()
+                if key not in ("event", "message_id")
+            }
+            sjs = f"{js_example}"[0:200]
+            logger.info(f'send message "{message_id}" to "{event}" : "{sjs}"')
+            await self.send_kafka(id=js["message_id"], data=js)
+
 
 async def send_event(message: dict, event: str = None):
-    global producer
-    js = message.copy()
-    if "message_id" not in js:
-        js["message_id"] = (
-            config.PRODUCER_ID + "-" + datetime.datetime.now().isoformat()
-        )
-    event = event if event else js.get("answer", None)
-    if event:
-        if js.get("event", None):
-            js["events"] = js.get("events", []) + [js["event"]]
-        js["event"] = event
-        message_id = js["message_id"]
-#        logger.info(f'send message "{message_id}" to "{event}", data: {js}')
-        logger.info(f'send message "{message_id}" to "{event}"')
-        await producer.send_kafka(id=js["message_id"], data=js)
+    await KafkaProducer().send_event(message, event)

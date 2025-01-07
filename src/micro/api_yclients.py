@@ -4,7 +4,10 @@ import asyncio
 import datetime
 import os
 
-import config
+from micro.singleton import MetaSingleton
+import micro.utils
+
+import micro.config as config
 
 from .metrics import (
     API_YCLIENTS_POST_REQUEST_CNT,
@@ -13,22 +16,7 @@ from .metrics import (
     API_YCLIENTS_REQUEST_ERROR_CNT,
 )
 
-import micro.utils
-
 logger = logging.getLogger(__name__)
-
-_yclients = None
-
-
-class MetaSingleton(type):
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(MetaSingleton, cls).__call__(
-                *args, **kwargs
-            )
-        return cls._instances[cls]
 
 
 class Yclients(metaclass=MetaSingleton):
@@ -563,13 +551,3 @@ class Yclients(metaclass=MetaSingleton):
 
     async def close(self):
         pass
-
-
-async def yclients():
-    global _yclients
-    if _yclients is None:
-        # Создать объект
-        _yclients = Yclients()
-        # Произвести авторизацию
-        await _yclients.auth()
-    return _yclients

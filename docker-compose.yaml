@@ -1,6 +1,4 @@
 # Это файл запуска процесса на stage
-version: "3"
-
 services:
 
   app:
@@ -20,6 +18,6 @@ services:
     env_file:  .env-stage
     # command: bash -c "python -m main"
     # command: bash -c "python -m pytest"
-    #command: bash -c "python -m pytest test_orm.py"
+    command: bash -c "python -m pytest /app/tests/test_diff.py --log-cli-level=INFO"
     # command: bash -c "dir /app && dir /app/tests"
-    command: bash -c "gunicorn tests.test:app --timeout 86400 --workers 1 --worker-class uvicorn.workers.UvicornWorker --log-config /conf/logger-plain.conf --bind 0.0.0.0:8001"
+    # command: bash -c "gunicorn tests.test:app --timeout 86400 --workers 1 --worker-class uvicorn.workers.UvicornWorker --log-config /conf/logger-plain.conf --bind 0.0.0.0:8001"

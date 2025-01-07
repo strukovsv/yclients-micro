@@ -11,10 +11,15 @@ import traceback
 import asyncio
 import os
 import logging
+import json
 
 import sentry_sdk
 
 from .utils import hide_passwords
+import micro.config as config
+from micro.kafka_consumer import KafkaConsumer
+from micro.kafka_producer import KafkaProducer
+from micro.status import Status
 
 log = logging.getLogger()
 
@@ -29,12 +34,51 @@ sentry_sdk.init(
 class BackgroundRunner:
 
     async def run_main(self, app):
+
+        async def cycle():
+            while True:
+                # Получить пакет сообщений из kafka
+                result = await KafkaConsumer().get_messages()
+                # Перебрать пакеты
+                for tp, messages in result.items():
+                    # Если есть сообщение
+                    if messages:
+                        for message in messages:
+                            # Обработать сообщение
+                            await app.events.do(json.loads(message.value))
+                        await KafkaConsumer().partition_commit(
+                            tp, messages[-1].offset + 1
+                        )
+
         while True:
-            if hasattr(app, "runner"):
+            if await Status().error():
+                log.info(
+                    f"service works with errors :( sleep {config.SLEEP_AFTER_ERROR_SECOND}"  # noqa
+                )
+                await asyncio.sleep(config.SLEEP_AFTER_ERROR_SECOND)
+                # Попробовать еще раз
+                await Status().set_ok()
+            else:
                 try:
-                    await app.runner()
-                except Exception:
-                    log.error("run_main : {}".format(traceback.format_exc()))
+                    # Подключиться к kafka
+                    await KafkaConsumer().start()
+                    await KafkaProducer().start()
+                    # После запуска kafka запустить сервис
+                    if hasattr(app, "runner"):
+                        asyncio.create_task(app.runner())
+                    async_task = asyncio.create_task(cycle())
+                    #
+                    await KafkaProducer().send_event(
+                        {}, f"service.start.{app.summary}"
+                    )
+                    await async_task
+                finally:
+                    # Отключиться от kafka
+                    # await yclient.close()
+                    await KafkaConsumer().stop()
+                    await KafkaProducer().stop()
+                    # Закрыть kafka
+                    await Status().set_error()
             await asyncio.sleep(
                 app.runner_period_secs
                 if hasattr(app, "runner_period_secs")
@@ -85,7 +129,10 @@ async def healthcheck():
                 status_code=500,
             )
     else:
-        return True
+        if await Status().ok():
+            return {"status": "UP"}
+        else:
+            return None
 
 
 @app.get("/ui/changelog", response_class=HTMLResponse)

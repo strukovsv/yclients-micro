@@ -2,14 +2,14 @@ import logging
 
 from aiokafka import AIOKafkaConsumer
 
-import config
+from micro.singleton import MetaSingleton
+
+import micro.config as config
 
 logger = logging.getLogger(__name__)
 
-consumer = None
 
-
-class KafkaConsumer(AIOKafkaConsumer):
+class KafkaConsumer(AIOKafkaConsumer, metaclass=MetaSingleton):
 
     def __init__(self):
         if config.CONSUMER_KAFKA["bootstrap_servers"]:
