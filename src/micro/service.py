@@ -1,21 +1,17 @@
-"""
-zilogLib library v.0.0.0
-The MIT License Copyright 2023 sstrukov
-"""
+import asyncio
+import os
+import logging
+import json
+import datetime
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from starlette_exporter import PrometheusMiddleware, handle_metrics
 from contextlib import asynccontextmanager
-import traceback
-import asyncio
-import os
-import logging
-import json
 
 import sentry_sdk
 
-from .utils import hide_passwords
+from micro.utils import hide_passwords
 import micro.config as config
 from micro.kafka_consumer import KafkaConsumer
 from micro.kafka_producer import KafkaProducer
@@ -44,8 +40,16 @@ class BackgroundRunner:
                     # Если есть сообщение
                     if messages:
                         for message in messages:
+                            # Добавить в сообщение время создания
+                            json_message = json.loads(message.value)
+                            json_message["create_event_timestamp"] = (
+                                datetime.datetime.fromtimestamp(
+                                    message.timestamp / 1000
+                                ).strftime("%d.%m.%Y %H:%M:%S")
+                            )
                             # Обработать сообщение
-                            await app.events.do(json.loads(message.value))
+                            await app.events.do(json_message)
+
                         await KafkaConsumer().partition_commit(
                             tp, messages[-1].offset + 1
                         )
