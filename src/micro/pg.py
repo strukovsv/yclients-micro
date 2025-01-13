@@ -1,16 +1,14 @@
 import logging
 import json
 import hashlib
-import dictdiffer
 import psycopg_pool
 from psycopg.rows import dict_row
 
 try:
-    import jinja2
+    import dictdiffer
 except Exception:
     pass
 
-from micro.utils import get_classic_rows
 from micro.singleton import MetaSingleton
 from micro.kafka_producer import KafkaProducer
 
@@ -202,41 +200,3 @@ where id = %(id)s""",
             # Вернуть, что запись добавлена
             return "insert"
         return None
-
-    async def get_data(self, table_name, id: int = None, where: str = None):
-        if id:
-            for row in await self.fetchall(
-                f"select js from {table_name} where id = %(id)s", {"id": id}
-            ):
-                return row["js"]
-        elif where:
-            for row in await self.fetchall(
-                f"select js from {table_name} where {where}"
-            ):
-                return row["js"]
-        else:
-            return None
-
-    async def update(
-        self, table_name: str, id: int, js: dict, func=None
-    ) -> str:
-        result = await self.update(table_name, id, js, func)
-        PG_UPDATES.labels(result).inc()
-        return result
-
-    async def select(self, template: str, **kwarg):
-        template_path = kwarg.get("template_path", None)
-        if template_path:
-            logger.info(f"{template_path=} {template=}")
-            sql_template = jinja2.Environment(
-                loader=jinja2.FileSystemLoader(template_path)
-            )
-            sql_text = sql_template.get_template(template).render(**kwarg)
-        else:
-            sql = jinja2.Environment(loader=jinja2.FileSystemLoader("sql/"))
-            sql_text = sql.get_template(template).render(**kwarg)
-        data = await self.fetchall(sql_text)
-        if kwarg.get("as_classic_rows", None):
-            return get_classic_rows(data)
-        else:
-            return data
