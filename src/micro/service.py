@@ -17,7 +17,7 @@ from micro.kafka_consumer import KafkaConsumer
 from micro.kafka_producer import KafkaProducer
 from micro.status import Status
 
-log = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 app = None
 
@@ -56,7 +56,7 @@ class BackgroundRunner:
 
         while True:
             if await Status().error():
-                log.info(
+                logger.info(
                     f"service works with errors :( sleep {config.SLEEP_AFTER_ERROR_SECOND}"  # noqa
                 )
                 await asyncio.sleep(config.SLEEP_AFTER_ERROR_SECOND)
