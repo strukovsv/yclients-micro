@@ -13,7 +13,7 @@ import sentry_sdk
 
 from micro.utils import hide_passwords
 import micro.config as config
-from micro.kafka_consumer import KafkaConsumer
+from micro.kafka_consumer import KafkaConsumer, capture
 from micro.kafka_producer import KafkaProducer
 from micro.status import Status
 
@@ -41,14 +41,18 @@ class BackgroundRunner:
                     if messages:
                         for message in messages:
                             # Добавить в сообщение время создания
-                            json_message = json.loads(message.value)
-                            json_message["create_event_timestamp"] = (
+                            message_dict = json.loads(message.value)
+                            message_dict["create_event_timestamp"] = (
                                 datetime.datetime.fromtimestamp(
                                     message.timestamp / 1000
                                 ).strftime("%d.%m.%Y %H:%M:%S")
                             )
                             # Обработать сообщение
-                            await app.events.do(json_message)
+                            # legasy
+                            if app.events:
+                                await app.events.do(message_dict)
+                            # new
+                            await capture(message_dict)
 
                         await KafkaConsumer().partition_commit(
                             tp, messages[-1].offset + 1
@@ -76,18 +80,21 @@ class BackgroundRunner:
                         {}, f"service.start.{app.summary}"
                     )
                     await async_task
+                except Exception as e:
+                    logger.info(f"exception: {e}")
                 finally:
+                    logger.info("fire error")
                     # Отключиться от kafka
                     # await yclient.close()
                     await KafkaConsumer().stop()
                     await KafkaProducer().stop()
                     # Закрыть kafka
                     await Status().set_error()
-            await asyncio.sleep(
-                app.runner_period_secs
-                if hasattr(app, "runner_period_secs")
-                else 120
-            )
+            # await asyncio.sleep(
+            #     app.runner_period_secs
+            #     if hasattr(app, "runner_period_secs")
+            #     else 120
+            # )
 
 
 runner = BackgroundRunner()
@@ -107,6 +114,8 @@ app = FastAPI(
 
 app.add_middleware(PrometheusMiddleware)
 app.add_route("/metrics", handle_metrics)
+
+app.events = None
 
 
 @app.get("/envs")

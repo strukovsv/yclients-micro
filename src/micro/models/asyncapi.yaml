@@ -1,0 +1,135 @@
+asyncapi: 3.0.0
+info:
+  title: User Signup API
+  version: 1.0.0
+  description: The API notifies you whenever a new user signs up in the application.
+servers:
+  kafkaServer:
+    host: test.mykafkacluster.org:8092
+    description: Kafka Server
+    protocol: kafka
+channels:
+  sync:
+    description: Канал обновления сущностей базы данных
+    address: sync
+    messages:
+      sync.RecordUpdated:
+        $ref: '#/components/messages/sync.RecordUpdated'
+      sync.RecordInserted:
+        $ref: '#/components/messages/sync.RecordInserted'
+  system:
+    description: Системные события
+    address: system
+    messages:
+      system.ServiceStarted:
+        $ref: '#/components/messages/system.ServiceStarted'
+      system.InfoMessageSent:
+        $ref: '#/components/messages/system.InfoMessageSent'
+      system.ErrorMessageSent:
+        $ref: '#/components/messages/system.ErrorMessageSent'
+  bot:
+    description: События поступающие от ботов
+    address: bot
+  schedule:
+    description: События от планировщика
+    address: schedule
+  worker:
+    description: События сервиса обработки
+    address: worker
+    messages:
+      worker.ReportReady:
+        $ref: '#/components/messages/worker.ReportReady'
+operations:
+  sync.RecordUpdated:
+    action: send
+    channel:
+      $ref: '#/channels/sync'
+    messages:
+      - $ref: '#/channels/sync/messages/sync.RecordUpdated'
+  sync.RecordInserted:
+    action: send
+    channel:
+      $ref: '#/channels/sync'
+    messages:
+      - $ref: '#/channels/sync/messages/sync.RecordInserted'
+  system.serviceStarted:
+    description: Формирование информационного сообщения
+    action: send
+    channel:
+      $ref: '#/channels/system'
+    messages:
+      - $ref: '#/channels/system/messages/system.ServiceStarted'
+  system.InfoMessageSent:
+    description: Отправить информационное сообщение
+    action: send
+    channel:
+      $ref: '#/channels/system'
+    messages:
+      - $ref: '#/channels/system/messages/system.InfoMessageSent'
+  system.ErrorMessageSent:
+    description: Отправить сообщение об ошибке сервиса
+    action: send
+    channel:
+      $ref: '#/channels/system'
+    messages:
+      - $ref: '#/channels/system/messages/system.ErrorMessageSent'
+  worker.ReportReady:
+    description: Сформирован отчет для клиента. Отправить в yclients, если заполнен client_id, отправить в telegram, если заполнет telegram_id
+    action: send
+    channel:
+      $ref: '#/channels/worker'
+    messages:
+      - $ref: '#/channels/worker/messages/worker.ReportReady'
+components:
+  messages:
+    sync.RecordUpdated:
+      payload:
+        schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/api/v1/avro/RecordUpdated'
+    sync.RecordInserted:
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/api/v1/schemes/RecordInserted'
+    system.ServiceStarted:
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/api/v1/schemes/ServiceStarted'
+    system.InfoMessageSent:
+      description: Отправлено информационное сообщение по системе
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/api/v1/schemes/InfoMessageSent'
+    system.ErrorMessageSent:
+      description: Отправлено сообщение о ошибке в сервисе
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/api/v1/schemes/ErrorMessageSent'
+    worker.ReportReady:
+      description: Сформирован отчет для клиента
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/api/v1/schemes/ReportReady'
+    bot.GetTextMessage:
+      description: Клиент ввел в боте текстовое сообщение
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/api/v1/schemes/GetTextMessage'
+    bot.GetReplyMessage:
+      description: Клиент ответил на сообщение в боте
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/api/v1/schemes/GetReplyMessage'
+    api.YclientsRecord:
+      description: "Получить список записей: https://api.yclients.com/api/v1/records/{company_id}"
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/api/v1/schemes/YclientsRecord'

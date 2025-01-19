@@ -32,7 +32,7 @@ CONSUMER_KAFKA = {
     "group_id": config.SRC_GROUP_ID,
 }
 
-PRODUCER_ID = config.get("PRODUCER_ID", "sync")
+PRODUCER_ID = config.get("SRC_GROUP_ID", "na")
 # Подключение к кафка
 PRODUCER_KAFKA = {
     # Обязательные параметры подключения
