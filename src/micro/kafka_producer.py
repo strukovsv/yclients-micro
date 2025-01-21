@@ -40,12 +40,12 @@ class KafkaProducer(AIOKafkaProducer, metaclass=MetaSingleton):
 
         js = message.copy()
         # Создать идентификатор сообщения
-        js["uid"] = (
+        js["uuid"] = (
             config.PRODUCER_ID + "-" + datetime.datetime.now().isoformat()
         )
         # Сформировать route kye для сообщения
-        if "chain_uid" not in js:
-            js["chain_uid"] = js["uid"]
+        if "chain_uuid" not in js:
+            js["chain_uuid"] = js["uuid"]
         # deprecate историю сообщений
         # if js.get("event", None):
         #     js["events"] = js.get("events", []) + [js["event"]]
@@ -54,7 +54,7 @@ class KafkaProducer(AIOKafkaProducer, metaclass=MetaSingleton):
         # js_example = {
         #     key: value
         #     for key, value in js.items()
-        #     if key not in ("event", "uid", "chain_uid")
+        #     if key not in ("event", "uuid", "chain_uuid")
         # }
         # sjs = f"{js_example}"[0:200]
         if obj:
@@ -62,11 +62,11 @@ class KafkaProducer(AIOKafkaProducer, metaclass=MetaSingleton):
             result = obj(**js)
             # logger.info(f'validate: {js=}')
             # logger.info(f'validate: {result.dict()=}')
-            await self.send_kafka(id=js["chain_uid"], data=result.dict())
-            logger.info(f'send validate message {js["uid"]} to "{event}"')
+            await self.send_kafka(id=js["chain_uuid"], data=result.dict())
+            logger.info(f'send validate message {js["uuid"]} to "{event}"')
         else:
-            await self.send_kafka(id=js["chain_uid"], data=js)
-            logger.info(f'send message {js["uid"]} to "{event}"')
+            await self.send_kafka(id=js["chain_uuid"], data=js)
+            logger.info(f'send message {js["uuid"]} to "{event}"')
 
 
 async def send_event(message: dict, event: str = None):

@@ -6,19 +6,19 @@ from pydantic_avro.base import AvroBase
 from pydantic import Field
 
 from micro.models.api_records import YclientsRecord
-from micro.models.base_event import BaseEvent
+from micro.models.header_event import HeaderEvent
 
 # fmt: off
 
 
-class RecordUpdated(BaseEvent):
+class RecordUpdated(HeaderEvent):
     """Обновлена таблица records"""
     id: int = Field(..., description="Идентификатор записи records") # noqa
     data: YclientsRecord = Field(..., description="Новый объект record") # noqa
     old: YclientsRecord = Field(..., description="Старый объект record") # noqa
 
 
-class RecordInserted(BaseEvent):
+class RecordInserted(HeaderEvent):
     """Новая запись в таблице records"""
     id: int = Field(..., description="Идентификатор записи records") # noqa
     data: YclientsRecord = Field(..., description="Новый объект record") # noqa

@@ -5,17 +5,17 @@ from typing import Any, List, Optional, Union
 from pydantic_avro.base import AvroBase
 from pydantic import Field
 
-from micro.models.base_event import BaseEvent
+from micro.models.header_event import HeaderEvent
 
 # fmt: off
 
 
-class SystemServiceStarted(BaseEvent):
+class SystemServiceStarted(HeaderEvent):
     """Сообщение о запуске сервиса"""
     service_name: str = Field(..., description="Имя сервиса: sync, worker, bi, bot и т.д.") # noqa
 
 
-class SystemInfoMessage(BaseEvent):
+class SystemInfoMessage(HeaderEvent):
     """Информационное сообщение
     bot: info.prolongation.service
     bot: info.test.message
@@ -30,6 +30,6 @@ class SystemInfoMessage(BaseEvent):
     text: Union[str, List[str]] = Field(..., description="Текст информационного сообщения, строка или массив строк") # noqa
 
 
-class SystemErrorMessage(BaseEvent):
+class SystemErrorMessage(HeaderEvent):
     """Отправлено сообщение об ошибке"""
     text: Union[str, List[str]] = Field(..., description="Текст сообщения об ошибке, строка или массив строк") # noqa
