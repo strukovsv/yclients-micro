@@ -3,15 +3,15 @@ FROM python:3.11
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="/app"
 
 RUN apt-get update
-RUN apt install -y python-dev-is-python3 
+RUN apt install -y python-dev-is-python3
 
-WORKDIR /conf
-COPY logger.conf ./
+# WORKDIR /conf
+# COPY logger.conf ./
 
 WORKDIR /app
 
 COPY requirements.txt ./
-RUN python -m pip install --upgrade pip 
+RUN python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install 'uvicorn[standard]' gunicorn
 

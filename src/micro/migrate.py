@@ -4,20 +4,22 @@ import os
 
 import yoyo
 
+from micro.utils import getenv
+
 logger = logging.getLogger(__name__)
 
 
-async def execute(config):
+async def execute():
     """
     Запустить миграцию БД
     """
     mirgate_path = os.getcwd() + "/migrations"
     # Получить данные подключения
-    database = config.PG_DATABASE
-    host = config.PG_HOST
-    user = config.PG_MIGRATE_USER
-    password = config.PG_MIGRATE_PASSWORD
-    port = config.PG_MIGRATE_PORT
+    database = getenv("DB_PG_BASE", None)
+    host = getenv("DB_PG_HOST", None)
+    user = getenv("DB_PG_USR_OWNER", None)
+    password = getenv("DB_PG_PWD_OWNER", None)
+    port = getenv("DB_PG_PORT_MIGRATION", None)
     url = (
         f"postgresql+psycopg://{user}:{password}@{host}/{database}?port={port}"
     )

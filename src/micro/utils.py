@@ -105,3 +105,5 @@ def get_classic_rows(rows: list) -> list:
                 ]
             )
     return result
+
+

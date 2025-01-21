@@ -2,14 +2,14 @@ import logging
 
 from aiokafka import AIOKafkaConsumer
 
-import config
+from micro.singleton import MetaSingleton
+
+import micro.config as config
 
 logger = logging.getLogger(__name__)
 
-consumer = None
 
-
-class KafkaConsumer(AIOKafkaConsumer):
+class KafkaConsumer(AIOKafkaConsumer, metaclass=MetaSingleton):
 
     def __init__(self):
         if config.CONSUMER_KAFKA["bootstrap_servers"]:
@@ -30,3 +30,23 @@ class KafkaConsumer(AIOKafkaConsumer):
     async def partition_commit(self, tp, offset):
         if not config.KAFKA_ENABLE_AUTO_COMMIT:
             await self.commit({tp: offset})
+
+
+message_handlers: list = []
+
+
+def message_handler(event_name):
+
+    def decorator(handler):
+        message_handlers.append({"name": event_name, "handler": handler})
+        return handler
+
+    return decorator
+
+
+async def capture(message: dict) -> None:
+    # logger.info(f'{message=} {message_handlers=}')
+    for handler in message_handlers:
+        if handler["name"].lower() == message["event"].lower():
+            # logger.info(f'capture: {message=}')
+            await handler["handler"](message)

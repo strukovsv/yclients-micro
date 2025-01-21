@@ -1,22 +1,24 @@
-"""
-zilogLib library v.0.0.0
-The MIT License Copyright 2023 sstrukov
-"""
+import asyncio
+import os
+import logging
+import json
+import datetime
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from starlette_exporter import PrometheusMiddleware, handle_metrics
 from contextlib import asynccontextmanager
-import traceback
-import asyncio
-import os
-import logging
 
 import sentry_sdk
 
-from .utils import hide_passwords
+from micro.utils import hide_passwords
+import micro.config as config
+from micro.kafka_consumer import KafkaConsumer, capture
+from micro.kafka_producer import KafkaProducer
+from micro.status import Status
+import micro.schemes as schemes
 
-log = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 app = None
 
@@ -29,17 +31,71 @@ sentry_sdk.init(
 class BackgroundRunner:
 
     async def run_main(self, app):
+
+        async def cycle():
+            while True:
+                # Получить пакет сообщений из kafka
+                result = await KafkaConsumer().get_messages()
+                # Перебрать пакеты
+                for tp, messages in result.items():
+                    # Если есть сообщение
+                    if messages:
+                        for message in messages:
+                            # Добавить в сообщение время создания
+                            message_dict = json.loads(message.value)
+                            message_dict["create_event_timestamp"] = (
+                                datetime.datetime.fromtimestamp(
+                                    message.timestamp / 1000
+                                ).strftime("%d.%m.%Y %H:%M:%S")
+                            )
+                            # Обработать сообщение
+                            # legasy
+                            if app.events:
+                                await app.events.do(message_dict)
+                            # new
+                            await capture(message_dict)
+
+                        await KafkaConsumer().partition_commit(
+                            tp, messages[-1].offset + 1
+                        )
+
         while True:
-            if hasattr(app, "runner"):
+            if await Status().error():
+                logger.info(
+                    f"service works with errors :( sleep {config.SLEEP_AFTER_ERROR_SECOND}"  # noqa
+                )
+                await asyncio.sleep(config.SLEEP_AFTER_ERROR_SECOND)
+                # Попробовать еще раз
+                await Status().set_ok()
+            else:
                 try:
-                    await app.runner()
-                except Exception:
-                    log.error("run_main : {}".format(traceback.format_exc()))
-            await asyncio.sleep(
-                app.runner_period_secs
-                if hasattr(app, "runner_period_secs")
-                else 120
-            )
+                    # Подключиться к kafka
+                    await KafkaConsumer().start()
+                    await KafkaProducer().start()
+                    # После запуска kafka запустить сервис
+                    if hasattr(app, "runner"):
+                        asyncio.create_task(app.runner())
+                    async_task = asyncio.create_task(cycle())
+                    #
+                    await KafkaProducer().send_event(
+                        {}, f"service.start.{app.summary}"
+                    )
+                    await async_task
+                except Exception as e:
+                    logger.info(f"exception: {e}")
+                finally:
+                    logger.info("fire error")
+                    # Отключиться от kafka
+                    # await yclient.close()
+                    await KafkaConsumer().stop()
+                    await KafkaProducer().stop()
+                    # Закрыть kafka
+                    await Status().set_error()
+            # await asyncio.sleep(
+            #     app.runner_period_secs
+            #     if hasattr(app, "runner_period_secs")
+            #     else 120
+            # )
 
 
 runner = BackgroundRunner()
@@ -59,6 +115,8 @@ app = FastAPI(
 
 app.add_middleware(PrometheusMiddleware)
 app.add_route("/metrics", handle_metrics)
+
+app.events = None
 
 
 @app.get("/envs")
@@ -85,7 +143,10 @@ async def healthcheck():
                 status_code=500,
             )
     else:
-        return True
+        if await Status().ok():
+            return {"status": "UP"}
+        else:
+            return None
 
 
 @app.get("/ui/changelog", response_class=HTMLResponse)
@@ -121,6 +182,31 @@ async def get_changelog(request: Request):
         </html>"""
     else:
         return lines
+
+
+@app.get("/schemes/{schema_name}")
+async def get_schemes(schema_name: str):
+    return JSONResponse(
+        content=schemes.get_schema(
+            schema_name=schema_name, return_type="json"
+        ),
+        headers={"Access-Control-Allow-Origin": "*"},
+    )
+
+
+@app.get("/avro/{schema_name}")
+async def get_avro(schema_name: str):
+    return JSONResponse(
+        content=schemes.get_schema(
+            schema_name=schema_name, return_type="avro"
+        ),
+        headers={"Access-Control-Allow-Origin": "*"},
+    )
+
+
+@app.get("/populate_schemes")
+async def populate_schemes():
+    return await schemes.populate_schemes()
 
 
 # Do not log metrics and healthcheck
