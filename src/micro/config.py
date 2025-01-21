@@ -55,3 +55,5 @@ KAFKA_ENABLE_AUTO_COMMIT = config.int("KAFKA_ENABLE_AUTO_COMMIT") == "1"
 BATCH_TIMEOUT_SEC = config.int("BATCH_TIMEOUT_SEC") or 5
 #  Максимальные размер блока чтения из KAFKA
 BATCH_MAX_RECORDS = config.int("BATCH_MAX_RECORDS") or 5
+
+SCHEMA_REGISTRY_URL = config.get("SCHEMA_REGISTRY_URL", None)
