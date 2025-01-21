@@ -9,9 +9,9 @@ from pydantic import Field
 # fmt: off
 
 
-class BaseEvent(AvroBase):
+class HeaderEvent(AvroBase):
     event: str = Field(..., description="Имя сообщения") # noqa
-    uid: str = Field(..., description="Идентификатор сообщения") # noqa
-    chain_uid: str = Field(..., description="Идентификатор цепочки сообщений") # noqa
+    uuid: str = Field(..., description="Идентификатор сообщения") # noqa
+    chain_uuid: str = Field(..., description="Идентификатор цепочки сообщений") # noqa
     desc: str | None = Field(None, description="Описание сообщения") # noqa
     version: str | None = Field(None, description="Версия сообщения") # noqa

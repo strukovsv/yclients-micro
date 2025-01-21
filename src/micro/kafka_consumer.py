@@ -45,7 +45,7 @@ def message_handler(event_name):
 
 
 async def capture(message: dict) -> None:
-    # logger.info(f'{message=} {message_handlers=}')
+    # logger.info(f'capture: {message=} {message_handlers=}')
     for handler in message_handlers:
         if handler["name"].lower() == message["event"].lower():
             # logger.info(f'capture: {message=}')
