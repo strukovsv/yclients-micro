@@ -78,7 +78,9 @@ class BackgroundRunner:
                     async_task = asyncio.create_task(cycle())
                     #
                     await KafkaProducer().send_event(
-                        {}, f"service.start.{app.summary}"
+                        event=f"service.start.{app.summary}",
+                        key=app.summary,
+                        message={},
                     )
                     await async_task
                 except Exception as e:
