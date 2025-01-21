@@ -26,48 +26,56 @@ class KafkaProducer(AIOKafkaProducer, metaclass=MetaSingleton):
             )
             logger.info(f"connect producer kafka: {config.PRODUCER_KAFKA}")
 
-    async def send_kafka(self, id, data):
-        """Отправить сообщение в kafka"""
+    async def send_kafka(self, key: any, data: dict) -> None:
+        """Отправить сообщение
+
+        :param any key: route key
+        :param dict data: сообщение
+        """
         await self.send_and_wait(
             topic=config.DST_TOPIC,
-            key=id.to_bytes(8, "big") if isinstance(id, int) else id.encode(),
+            key=str(key).encode(),
             value=json.dumps(
                 data, ensure_ascii=False, default=serialize_datetime
             ).encode(),
         )
 
-    async def send_event(self, message: dict, event: str, obj: object = None):
+    async def send_event(
+        self, event: str, message: dict, key: any = None, obj: object = None
+    ) -> None:
+        """Отправить сообщение в topic
 
+        :param str event: тип сообщения
+        :param dict message: отправляемое сообщение
+        :param any key: route key для topic, defaults to None
+        :param object obj: объект валидации сообщения, defaults to None
+        """
+        # Скопировать текущее сообщение и обоготить его
         js = message.copy()
+        # Тип сообщения
+        js["event"] = event
         # Создать идентификатор сообщения
         js["uuid"] = (
             config.PRODUCER_ID + "-" + datetime.datetime.now().isoformat()
         )
-        # Сформировать route kye для сообщения
+        # Сформировать атрибут для цепочки сообщений
         if "chain_uuid" not in js:
             js["chain_uuid"] = js["uuid"]
-        # deprecate историю сообщений
-        # if js.get("event", None):
-        #     js["events"] = js.get("events", []) + [js["event"]]
-        js["event"] = event
-        # Кратко распечатать 200 символов json
-        # js_example = {
-        #     key: value
-        #     for key, value in js.items()
-        #     if key not in ("event", "uuid", "chain_uuid")
-        # }
-        # sjs = f"{js_example}"[0:200]
+        # Валидация объекта
         if obj:
-            # Валидация объекта
-            result = obj(**js)
-            # logger.info(f'validate: {js=}')
-            # logger.info(f'validate: {result.dict()=}')
-            await self.send_kafka(id=js["chain_uuid"], data=result.dict())
-            logger.info(f'send validate message {js["uuid"]} to "{event}"')
-        else:
-            await self.send_kafka(id=js["chain_uuid"], data=js)
-            logger.info(f'send message {js["uuid"]} to "{event}"')
+            try:
+                # Создать объект по dict
+                result = obj(**js)
+                # Обратно получить dict из объекта
+                js = result.dict()
+            except Exception as e:
+                logger.error(
+                    f'Ошибка "{e}" валидации сообщения "{js}" по типу "{obj}"'
+                )
+        # Отправить сообщение
+        await self.send_kafka(key=key if key else "na", data=js)
+        logger.info(f'send event "{event}"')
 
 
-async def send_event(message: dict, event: str = None):
-    await KafkaProducer().send_event(message, event)
+# async def send_event(message: dict, event: str = None):
+#     await KafkaProducer().send_event(event=event, key="na", message=message)
