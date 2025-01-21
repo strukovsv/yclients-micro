@@ -21,12 +21,12 @@ channels:
     description: Системные события
     address: system
     messages:
-      system.ServiceStarted:
-        $ref: '#/components/messages/system.ServiceStarted'
-      system.InfoMessageSent:
-        $ref: '#/components/messages/system.InfoMessageSent'
-      system.ErrorMessageSent:
-        $ref: '#/components/messages/system.ErrorMessageSent'
+      SystemServiceStarted:
+        $ref: '#/components/messages/SystemServiceStarted'
+      SystemInfoMessage:
+        $ref: '#/components/messages/SystemInfoMessage'
+      SystemErrorMessage:
+        $ref: '#/components/messages/SystemErrorMessage'
   bot:
     description: События поступающие от ботов
     address: bot
@@ -58,21 +58,21 @@ operations:
     channel:
       $ref: '#/channels/system'
     messages:
-      - $ref: '#/channels/system/messages/system.ServiceStarted'
-  system.InfoMessageSent:
+      - $ref: '#/channels/system/messages/SystemServiceStarted'
+  SystemInfoMessage:
     description: Отправить информационное сообщение
     action: send
     channel:
       $ref: '#/channels/system'
     messages:
-      - $ref: '#/channels/system/messages/system.InfoMessageSent'
-  system.ErrorMessageSent:
+      - $ref: '#/channels/system/messages/SystemInfoMessage'
+  SystemErrorMessage:
     description: Отправить сообщение об ошибке сервиса
     action: send
     channel:
       $ref: '#/channels/system'
     messages:
-      - $ref: '#/channels/system/messages/system.ErrorMessageSent'
+      - $ref: '#/channels/system/messages/SystemErrorMessage'
   worker.ReportReady:
     description: Сформирован отчет для клиента. Отправить в yclients, если заполнен client_id, отправить в telegram, если заполнет telegram_id
     action: send
@@ -86,50 +86,50 @@ components:
       payload:
         schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
         schema:
-          $ref: 'http://localhost:8012/api/v1/avro/RecordUpdated'
+          $ref: 'http://localhost:8012/avro/RecordUpdated'
     sync.RecordInserted:
       payload:
         # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
         schema:
-          $ref: 'http://localhost:8012/api/v1/schemes/RecordInserted'
-    system.ServiceStarted:
+          $ref: 'http://localhost:8012/schemes/RecordInserted'
+    SystemServiceStarted:
       payload:
         # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
         schema:
-          $ref: 'http://localhost:8012/api/v1/schemes/ServiceStarted'
-    system.InfoMessageSent:
+          $ref: 'http://localhost:8012/schemes/SystemServiceStarted'
+    SystemInfoMessage:
       description: Отправлено информационное сообщение по системе
       payload:
         # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
         schema:
-          $ref: 'http://localhost:8012/api/v1/schemes/InfoMessageSent'
-    system.ErrorMessageSent:
+          $ref: 'http://localhost:8012/schemes/SystemInfoMessage'
+    SystemErrorMessage:
       description: Отправлено сообщение о ошибке в сервисе
       payload:
         # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
         schema:
-          $ref: 'http://localhost:8012/api/v1/schemes/ErrorMessageSent'
+          $ref: 'http://localhost:8012/schemes/SystemErrorMessage'
     worker.ReportReady:
       description: Сформирован отчет для клиента
       payload:
         # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
         schema:
-          $ref: 'http://localhost:8012/api/v1/schemes/ReportReady'
-    bot.GetTextMessage:
+          $ref: 'http://localhost:8012/schemes/ReportReady'
+    BotEnteredTextMessage:
       description: Клиент ввел в боте текстовое сообщение
       payload:
         # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
         schema:
-          $ref: 'http://localhost:8012/api/v1/schemes/GetTextMessage'
-    bot.GetReplyMessage:
+          $ref: 'http://localhost:8012/schemes/BotEnteredTextMessage'
+    BotEnteredReplyMessage:
       description: Клиент ответил на сообщение в боте
       payload:
         # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
         schema:
-          $ref: 'http://localhost:8012/api/v1/schemes/GetReplyMessage'
+          $ref: 'http://localhost:8012/schemes/BotEnteredReplyMessage'
     api.YclientsRecord:
       description: "Получить список записей: https://api.yclients.com/api/v1/records/{company_id}"
       payload:
         # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
         schema:
-          $ref: 'http://localhost:8012/api/v1/schemes/YclientsRecord'
+          $ref: 'http://localhost:8012/schemes/YclientsRecord'

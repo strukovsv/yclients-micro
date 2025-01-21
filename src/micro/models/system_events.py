@@ -10,12 +10,12 @@ from micro.models.base_event import BaseEvent
 # fmt: off
 
 
-class ServiceStarted(BaseEvent):
+class SystemServiceStarted(BaseEvent):
     """Сообщение о запуске сервиса"""
     service_name: str = Field(..., description="Имя сервиса: sync, worker, bi, bot и т.д.") # noqa
 
 
-class InfoMessage(BaseEvent):
+class SystemInfoMessage(BaseEvent):
     """Информационное сообщение
     bot: info.prolongation.service
     bot: info.test.message
@@ -30,6 +30,6 @@ class InfoMessage(BaseEvent):
     text: Union[str, List[str]] = Field(..., description="Текст информационного сообщения, строка или массив строк") # noqa
 
 
-class ErrorMessage(BaseEvent):
+class SystemErrorMessage(BaseEvent):
     """Отправлено сообщение об ошибке"""
     text: Union[str, List[str]] = Field(..., description="Текст сообщения об ошибке, строка или массив строк") # noqa

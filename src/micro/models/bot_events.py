@@ -5,7 +5,6 @@ from typing import Any, List, Optional
 from pydantic_avro.base import AvroBase
 from pydantic import Field
 
-from micro.models.api_records import YclientsRecord
 from micro.models.base_event import BaseEvent
 
 # fmt: off
@@ -25,29 +24,28 @@ class TelegramUser(AvroBase):
     phone: str
 
 
-class GetTextMessage(BaseEvent):
+class BotEnteredTextMessage(BaseEvent):
     """Введен текст в боте"""
     user: TelegramUser # noqa
     text: str # noqa
     message_id: int # noqa
     chat_id: int # noqa
-    chat_id2: int # noqa
     pass
 
 
-class GetReplyMessage(BaseEvent):
+class BotEnteredReplyMessage(BaseEvent):
     """Введен ответ на текст в боте"""
 
     pass
 
 
-class MenuItemSelected(BaseEvent):
+class BotMenuItemSelected(BaseEvent):
     """Выбран пункт меню"""
 
     pass
 
 
-class GetCommand(BaseEvent):
+class BotEnteredCommand(BaseEvent):
     """Введена команда"""
 
     pass
