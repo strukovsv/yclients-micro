@@ -211,6 +211,14 @@ async def populate_schemes():
     return await schemes.populate_schemes()
 
 
+@app.get("/asyncapi")
+async def asyncapi():
+    return JSONResponse(
+        content=await schemes.get_asyncapi(),
+        headers={"Access-Control-Allow-Origin": "*"},
+    )
+
+
 # Do not log metrics and healthcheck
 class EndpointFilter(logging.Filter):
 

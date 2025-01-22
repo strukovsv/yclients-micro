@@ -1,0 +1,63 @@
+asyncapi: 3.0.0
+info:
+  title: User Signup API
+  version: 1.0.0
+  description: The API notifies you whenever a new user signs up in the application.
+servers:
+  kafkaServer:
+    host: test.mykafkacluster.org:8092
+    description: Kafka Server
+    protocol: kafka
+components:
+  messages:
+    sync.RecordUpdated:
+      payload:
+        schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/avro/RecordUpdated'
+    sync.RecordInserted:
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/schemes/RecordInserted'
+    SystemServiceStarted:
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/schemes/SystemServiceStarted'
+    SystemInfoMessage:
+      description: Отправлено информационное сообщение по системе
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/schemes/SystemInfoMessage'
+    SystemErrorMessage:
+      description: Отправлено сообщение о ошибке в сервисе
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/schemes/SystemErrorMessage'
+    worker.ReportReady:
+      description: Сформирован отчет для клиента
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/schemes/ReportReady'
+    BotEnteredTextMessage:
+      description: Клиент ввел в боте текстовое сообщение
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/schemes/BotEnteredTextMessage'
+    BotEnteredReplyMessage:
+      description: Клиент ответил на сообщение в боте
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/schemes/BotEnteredReplyMessage'
+    api.YclientsRecord:
+      description: "Получить список записей: https://api.yclients.com/api/v1/records/{company_id}"
+      payload:
+        # schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+        schema:
+          $ref: 'http://localhost:8012/schemes/YclientsRecord'
