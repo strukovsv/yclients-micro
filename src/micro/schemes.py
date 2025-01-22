@@ -28,16 +28,23 @@ def get_models():
         for module_name, module_object in sys.modules.items()
         if module_name.startswith("micro.models.")
     ]
-    result = []
+    result = {}
     for module_object in modules:
         for name, obj in inspect.getmembers(module_object, inspect.isclass):
-            result.append((name, obj))
+            # logger.info(f'{name} {obj} {type(obj)} {issubclass(obj, AvroBase)=}')
+            if (
+                issubclass(obj, AvroBase)
+                and name != "AvroBase"
+                and name != "HeaderEvent"
+            ):
+                result[name] = obj
+    logger.info(f"{result}")
     return result
 
 
 def get_schema(schema_name: str, return_type: str = "json") -> dict:
     # Получить все классы из модуля
-    for name, schema_obj in get_models():
+    for name, schema_obj in get_models().items():
         # Найти наш объект
         if schema_name.lower() == name.lower():
             # Вернуть avro схему
@@ -55,7 +62,7 @@ async def populate_schemes():
         schema_result = {"success": [], "incompatible": [], "error": []}
         # Перебрать все модули
         # Получить все классы из модуля
-        for name, schema_obj in get_models():
+        for name, schema_obj in get_models().items():
             # logger.info(f"{name} : +{str(type(schema_obj))}+")
             if "<class 'pydantic.main.ModelMetaclass'>" == str(
                 type(schema_obj)
@@ -90,3 +97,42 @@ async def populate_schemes():
         return schema_result
     else:
         raise Exception("Не задана переменная окружения SCHEMA_REGISTRY_URL")
+
+
+async def get_asyncapi() -> dict:
+    # http://localhost:8015/asyncapi
+    # components:
+    #   messages:
+    #     sync.RecordUpdated:
+    #       payload:
+    #         schemaFormat: 'application/vnd.apache.avro;version=1.9.0'
+    #         schema:
+    #           $ref: 'http://localhost:8012/avro/RecordUpdated'
+    event_list = {}
+    for name, obj in get_models().items():
+        description = obj.__doc__ if obj.__doc__ else ""
+        # ", ".join(obj.__doc__.split("\n"))
+        event_list[name] = {
+            "description": description,
+            "payload": {
+                "schema": {"$ref": f"http://localhost:8015/schemes/{name}"}
+            },
+        }
+    result = {
+        "asyncapi": "3.0.0",
+        "info": {
+            "title": "User Signup API",
+            "version": "1.0.0",
+            "description": "The API notifies you whenever a new user signs up in the application.",
+        },
+        "servers": {
+            "kafkaServer": {
+                "host": "test.mykafkacluster.org:8092",
+                "description": "Kafka Server",
+                "protocol": "kafka",
+            }
+        },
+        "components": {"messages": event_list},
+    }
+    return result
+    # return [key for key in get_models()]

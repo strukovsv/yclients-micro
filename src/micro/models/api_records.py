@@ -3,21 +3,21 @@ from __future__ import annotations
 from typing import Any, List, Optional
 
 from pydantic_avro.base import AvroBase
-from pydantic import Field, ConfigDict
+from pydantic import Field, ConfigDict, BaseModel
 
 # fmt: off
 
 
-class StaffServiceLink(AvroBase):
+class StaffServiceLink(BaseModel):
     length: int
 
 
-class CompanyServiceLink(AvroBase):
+class CompanyServiceLink(BaseModel):
     price_min: int
     price_max: int
 
 
-class Service(AvroBase):
+class Service(BaseModel):
     id: int
     title: str
     cost: int
@@ -31,13 +31,13 @@ class Service(AvroBase):
     company_service_link: CompanyServiceLink
 
 
-class Position(AvroBase):
+class Position(BaseModel):
     id: int
     title: str
     services_binding_type: int
 
 
-class Staff(AvroBase):
+class Staff(BaseModel):
     """Test describe"""
 
     # model_config = ConfigDict(title="test title") # noqa
@@ -52,7 +52,7 @@ class Staff(AvroBase):
     votes_count: int
 
 
-class Client(AvroBase):
+class Client(BaseModel):
     id: int = Field(..., description="Идентификатор клиента") # noqa # noqa
     name: str = Field(..., description="Имя клиента") # noqa
     surname: str = Field(..., description="Фамилия клиента") # noqa
@@ -73,7 +73,7 @@ class Client(AvroBase):
     phone_country_id: int = Field(..., description="") # noqa
 
 
-class Document(AvroBase):
+class Document(BaseModel):
     id: int
     type_id: int
     storage_id: int
