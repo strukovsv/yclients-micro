@@ -99,7 +99,7 @@ async def populate_schemes():
         raise Exception("Не задана переменная окружения SCHEMA_REGISTRY_URL")
 
 
-async def get_asyncapi() -> dict:
+def get_asyncapi() -> dict:
     # http://localhost:8015/asyncapi
     # components:
     #   messages:
@@ -135,4 +135,12 @@ async def get_asyncapi() -> dict:
         "components": {"messages": event_list},
     }
     return result
-    # return [key for key in get_models()]
+
+
+def event_schemas() -> dict:
+    new_schemes = {}
+    for name, obj in get_models().items():
+        new_schemes[name] = {
+            "$ref": f"/schemes/{name}",
+        }
+    return new_schemes

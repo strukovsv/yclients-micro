@@ -23,6 +23,7 @@ class KafkaProducer(AIOKafkaProducer, metaclass=MetaSingleton):
             super().__init__(
                 **config.PRODUCER_KAFKA,
                 enable_idempotence=config.ENABLE_IDEMPOTENCE,
+                retry_backoff_ms=10000,
             )
             logger.info(f"connect producer kafka: {config.PRODUCER_KAFKA}")
 

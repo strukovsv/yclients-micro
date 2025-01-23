@@ -3,9 +3,12 @@ import os
 import logging
 import json
 import datetime
+import traceback
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.openapi.utils import get_openapi
+from fastapi.openapi.docs import get_swagger_ui_html
 from starlette_exporter import PrometheusMiddleware, handle_metrics
 from contextlib import asynccontextmanager
 
@@ -33,31 +36,40 @@ class BackgroundRunner:
     async def run_main(self, app):
 
         async def cycle():
-            while True:
-                # Получить пакет сообщений из kafka
-                result = await KafkaConsumer().get_messages()
-                # Перебрать пакеты
-                for tp, messages in result.items():
-                    # Если есть сообщение
-                    if messages:
-                        for message in messages:
-                            # Добавить в сообщение время создания
-                            message_dict = json.loads(message.value)
-                            message_dict["create_event_timestamp"] = (
-                                datetime.datetime.fromtimestamp(
-                                    message.timestamp / 1000
-                                ).strftime("%d.%m.%Y %H:%M:%S")
-                            )
-                            # Обработать сообщение
-                            # legasy
-                            if app.events:
-                                await app.events.do(message_dict)
-                            # new
-                            await capture(message_dict)
+            try:
+                logger.info('start kafka consumer')
+                await KafkaConsumer().start()
+                while True:
+                    # Получить пакет сообщений из kafka
+                    result = await KafkaConsumer().get_messages()
+                    # Перебрать пакеты
+                    for tp, messages in result.items():
+                        # Если есть сообщение
+                        if messages:
+                            for message in messages:
+                                # Добавить в сообщение время создания
+                                message_dict = json.loads(message.value)
+                                message_dict["create_event_timestamp"] = (
+                                    datetime.datetime.fromtimestamp(
+                                        message.timestamp / 1000
+                                    ).strftime("%d.%m.%Y %H:%M:%S")
+                                )
+                                # Обработать сообщение
+                                # legasy
+                                if app.events:
+                                    await app.events.do(message_dict)
+                                # new
+                                await capture(message_dict)
 
-                        await KafkaConsumer().partition_commit(
-                            tp, messages[-1].offset + 1
-                        )
+                            await KafkaConsumer().partition_commit(
+                                tp, messages[-1].offset + 1
+                            )
+            except Exception:
+                traceback.print_exc()
+                raise
+            finally:
+                logger.info('stop kafka consumer')
+                await KafkaConsumer().stop()
 
         while True:
             if await Status().error():
@@ -70,7 +82,7 @@ class BackgroundRunner:
             else:
                 try:
                     # Подключиться к kafka
-                    await KafkaConsumer().start()
+                    logger.info('start kafka producer')
                     await KafkaProducer().start()
                     # После запуска kafka запустить сервис
                     if hasattr(app, "runner"):
@@ -83,21 +95,23 @@ class BackgroundRunner:
                         message={},
                     )
                     await async_task
-                except Exception as e:
-                    logger.info(f"exception: {e}")
+                except Exception:
+                    traceback.print_exc()
+                    raise
+                    # logger.info(f"exception: {e}")
                 finally:
-                    logger.info("fire error")
+                    logger.info("Closed service")
                     # Отключиться от kafka
                     # await yclient.close()
-                    await KafkaConsumer().stop()
+                    logger.info('stop kafka producer')
                     await KafkaProducer().stop()
                     # Закрыть kafka
                     await Status().set_error()
-            # await asyncio.sleep(
-            #     app.runner_period_secs
-            #     if hasattr(app, "runner_period_secs")
-            #     else 120
-            # )
+                    # await asyncio.sleep(
+                    #     app.runner_period_secs
+                    #     if hasattr(app, "runner_period_secs")
+                    #     else 120
+                    # )
 
 
 runner = BackgroundRunner()
@@ -214,9 +228,24 @@ async def populate_schemes():
 @app.get("/asyncapi")
 async def asyncapi():
     return JSONResponse(
-        content=await schemes.get_asyncapi(),
+        content=schemes.get_asyncapi(),
         headers={"Access-Control-Allow-Origin": "*"},
     )
+
+
+def custom_openapi():
+    openapi_schema = get_openapi(
+        title="FastAPI",
+        version="1.0.0",
+        description="This is a custom OpenAPI schema",
+        routes=app.routes,
+    )
+    for scheme_name, scheme_dict in (schemes.event_schemas()).items():
+        openapi_schema["components"]["schemas"][scheme_name] = scheme_dict
+    return openapi_schema
+
+
+app.openapi = custom_openapi
 
 
 # Do not log metrics and healthcheck

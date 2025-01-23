@@ -18,6 +18,7 @@ class KafkaConsumer(AIOKafkaConsumer, metaclass=MetaSingleton):
                 **config.CONSUMER_KAFKA,
                 enable_auto_commit=config.KAFKA_ENABLE_AUTO_COMMIT,
                 auto_offset_reset="earliest",
+                retry_backoff_ms=10000,
             )
             logger.info(f"connect consumer kafka: {config.CONSUMER_KAFKA}")
 
