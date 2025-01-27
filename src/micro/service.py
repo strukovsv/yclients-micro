@@ -19,7 +19,7 @@ import micro.config as config
 from micro.kafka_consumer import KafkaConsumer, capture
 from micro.kafka_producer import KafkaProducer
 from micro.status import Status
-import micro.schemes as schemes
+from micro.schemes import Schema
 
 logger = logging.getLogger(__name__)
 
@@ -203,7 +203,7 @@ async def get_changelog(request: Request):
 @app.get("/schemes/{schema_name}")
 async def get_schemes(schema_name: str):
     return JSONResponse(
-        content=schemes.get_schema(
+        content=Schema().get_schema(
             schema_name=schema_name, return_type="json"
         ),
         headers={"Access-Control-Allow-Origin": "*"},
@@ -213,7 +213,7 @@ async def get_schemes(schema_name: str):
 @app.get("/avro/{schema_name}")
 async def get_avro(schema_name: str):
     return JSONResponse(
-        content=schemes.get_schema(
+        content=Schema().get_schema(
             schema_name=schema_name, return_type="avro"
         ),
         headers={"Access-Control-Allow-Origin": "*"},
@@ -222,13 +222,13 @@ async def get_avro(schema_name: str):
 
 @app.get("/populate_schemes")
 async def populate_schemes():
-    return await schemes.populate_schemes()
+    return await Schema().populate_schemes()
 
 
 @app.get("/asyncapi")
 async def asyncapi():
     return JSONResponse(
-        content=schemes.get_asyncapi(),
+        content=Schema().get_asyncapi(),
         headers={"Access-Control-Allow-Origin": "*"},
     )
 
@@ -240,7 +240,7 @@ def custom_openapi():
         description="This is a custom OpenAPI schema",
         routes=app.routes,
     )
-    for scheme_name, scheme_dict in (schemes.event_schemas()).items():
+    for scheme_name, scheme_dict in (Schema().event_schemas()).items():
         openapi_schema["components"]["schemas"][scheme_name] = scheme_dict
     return openapi_schema
 

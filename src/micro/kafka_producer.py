@@ -5,6 +5,7 @@ import datetime
 from aiokafka import AIOKafkaProducer
 
 from micro.singleton import MetaSingleton
+# from micro.models.header_event import HeaderEvent, Header
 
 import micro.config as config
 
@@ -76,6 +77,7 @@ class KafkaProducer(AIOKafkaProducer, metaclass=MetaSingleton):
         # Отправить сообщение
         await self.send_kafka(key=key if key else "na", data=js)
         logger.info(f'send event "{event}"')
+
 
 
 # async def send_event(message: dict, event: str = None):

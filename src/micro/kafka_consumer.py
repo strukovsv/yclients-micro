@@ -6,6 +6,8 @@ from micro.singleton import MetaSingleton
 
 import micro.config as config
 
+from micro.schemes import Schema
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,6 +36,7 @@ class KafkaConsumer(AIOKafkaConsumer, metaclass=MetaSingleton):
 
 
 message_handlers: list = []
+event_handlers: list = []
 
 
 def message_handler(event_name):
@@ -45,9 +48,35 @@ def message_handler(event_name):
     return decorator
 
 
+def event_handler(event_name):
+
+    def decorator(handler):
+        event_handlers.append({"name": event_name, "handler": handler})
+        return handler
+
+    return decorator
+
+
 async def capture(message: dict) -> None:
+    event_name = message.get("header", {}).get("event", None) or message.get(
+        "event", None
+    )
     # logger.info(f'capture: {message=} {message_handlers=}')
+    # ++ legasy
     for handler in message_handlers:
-        if handler["name"].lower() == message["event"].lower():
-            # logger.info(f'capture: {message=}')
+        if handler["name"].lower() == event_name.lower():
+            # logger.info(f"capture message: {message=}")
             await handler["handler"](message)
+    # -- legasy
+    # Перебрать все обработчики событий
+    for handler in event_handlers:
+        # Найти свой обработчик
+        if handler["name"].lower() == event_name.lower():
+            # logger.info(f"capture event: {message=}")
+            # Найти свою модель
+            obj = Schema().get_models().get(event_name, None)
+            if obj:
+                # Вызвать функцию обработчик события, передать на вход объект
+                await handler["handler"](obj(**message))
+            else:
+                raise Exception(f"Не найдена model {event_name}")
