@@ -198,9 +198,15 @@ class Yclients(metaclass=MetaSingleton):
                         except Exception:
                             response = None
                         API_YCLIENTS_REQUEST_ERROR_CNT.inc()
-                        raise Exception(
-                            f'httpx url: "{method} + {__url__}", response: "{response}", message: "{e}", params: "{params}"'  # noqa
-                        )
+                        if f"{e}" == "Не найдено":
+                            logger.error(
+                                f'httpx url: "{method} + {__url__}", response: "{response}", message: "Не найдено записей, вернуть []", params: "{params}"'  # noqa
+                            )  # noqa
+                            rows = []
+                        else:
+                            raise Exception(
+                                f'httpx url: "{method} + {__url__}", response: "{response}", message: "{e}", params: "{params}"'  # noqa
+                            )
                 # Поспать немного.
                 # Один запрос, не менее 1 сек
                 # Осталось до одной секуды
