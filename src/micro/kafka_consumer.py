@@ -11,28 +11,55 @@ from micro.schemes import Schema
 logger = logging.getLogger(__name__)
 
 
-class KafkaConsumer(AIOKafkaConsumer, metaclass=MetaSingleton):
+class KafkaConsumer(metaclass=MetaSingleton):
 
-    def __init__(self):
-        if config.CONSUMER_KAFKA["bootstrap_servers"]:
-            super().__init__(
-                config.SRC_TOPIC,
-                **config.CONSUMER_KAFKA,
-                enable_auto_commit=config.KAFKA_ENABLE_AUTO_COMMIT,
-                auto_offset_reset="earliest",
-                retry_backoff_ms=10000,
-            )
-            logger.info(f"connect consumer kafka: {config.CONSUMER_KAFKA}")
+    consumer: AIOKafkaConsumer = None
+
+    # def __init__(self):
+    # if config.CONSUMER_KAFKA["bootstrap_servers"]:
+    #     super().__init__(
+    #         config.SRC_TOPIC,
+    #         **config.CONSUMER_KAFKA,
+    #         enable_auto_commit=config.KAFKA_ENABLE_AUTO_COMMIT,
+    #         auto_offset_reset="earliest",
+    #         retry_backoff_ms=10000,
+    #     )
+    #     logger.info(f"connect consumer kafka: {config.CONSUMER_KAFKA}")
+
+    async def start(self):
+        self.consumer = AIOKafkaConsumer(
+            config.SRC_TOPIC,
+            **config.CONSUMER_KAFKA,
+            enable_auto_commit=config.KAFKA_ENABLE_AUTO_COMMIT,
+            auto_offset_reset="earliest",
+            retry_backoff_ms=10000,
+        )
+        logger.info(
+            f"connect consumer kafka: {config.CONSUMER_KAFKA}"
+        )
+        await self.consumer.start()
 
     async def get_messages(self):
-        return await self.getmany(
+        """Получить сообщения из kafka
+        если соединения не установлено,
+        то установить соединение и запустить kafka"""
+        if not self.consumer:
+            await self.start()
+        return await self.consumer.getmany(
             timeout_ms=config.BATCH_TIMEOUT_SEC * 1000,
             max_records=config.BATCH_MAX_RECORDS,
         )
 
     async def partition_commit(self, tp, offset):
+        """Пометить прочитанные записи обработанными"""
         if not config.KAFKA_ENABLE_AUTO_COMMIT:
-            await self.commit({tp: offset})
+            await self.consumer.commit({tp: offset})
+
+    async def stop(self):
+        """Остановить kafka соединение и отпустить объект"""
+        await self.consumer.stop()
+        del self.consumer
+        self.consumer = None
 
 
 message_handlers: list = []

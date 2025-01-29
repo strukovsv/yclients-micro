@@ -37,8 +37,6 @@ class BackgroundRunner:
 
         async def cycle():
             try:
-                logger.info('start kafka consumer')
-                await KafkaConsumer().start()
                 while True:
                     # Получить пакет сообщений из kafka
                     result = await KafkaConsumer().get_messages()
@@ -67,28 +65,26 @@ class BackgroundRunner:
             except Exception:
                 traceback.print_exc()
                 raise
-            finally:
-                logger.info('stop kafka consumer')
-                await KafkaConsumer().stop()
 
         while True:
             if await Status().error():
                 logger.info(
                     f"service works with errors :( sleep {config.SLEEP_AFTER_ERROR_SECOND}"  # noqa
                 )
-                await asyncio.sleep(config.SLEEP_AFTER_ERROR_SECOND)
+                # await asyncio.sleep(config.SLEEP_AFTER_ERROR_SECOND)
+                await asyncio.sleep(15)
                 # Попробовать еще раз
                 await Status().set_ok()
             else:
                 try:
                     # Подключиться к kafka
-                    logger.info('start kafka producer')
-                    await KafkaProducer().start()
+                    # logger.info('start kafka producer')
+                    # await KafkaProducer().start()
                     # После запуска kafka запустить сервис
+                    async_task = asyncio.create_task(cycle())
                     if hasattr(app, "runner"):
                         asyncio.create_task(app.runner())
-                    async_task = asyncio.create_task(cycle())
-                    #
+
                     await KafkaProducer().send_event(
                         event=f"service.start.{app.summary}",
                         key=app.summary,
@@ -97,7 +93,7 @@ class BackgroundRunner:
                     await async_task
                 except Exception:
                     traceback.print_exc()
-                    raise
+                    # raise
                     # logger.info(f"exception: {e}")
                 finally:
                     logger.info("Closed service")
@@ -105,6 +101,13 @@ class BackgroundRunner:
                     # await yclient.close()
                     logger.info('stop kafka producer')
                     await KafkaProducer().stop()
+                    logger.info('stop kafka consumer')
+                    await KafkaConsumer().stop()
+
+                    if hasattr(app, "del_objects"):
+                        dels = asyncio.create_task(app.del_objects())
+                        await dels
+
                     # Закрыть kafka
                     await Status().set_error()
                     # await asyncio.sleep(
@@ -162,7 +165,10 @@ async def healthcheck():
         if await Status().ok():
             return {"status": "UP"}
         else:
-            return None
+            return JSONResponse(
+                content={"message": "Service works with errors"},
+                status_code=500,
+            )
 
 
 @app.get("/ui/changelog", response_class=HTMLResponse)

@@ -42,6 +42,15 @@ async def select(template: str, **kwarg):
         sql = jinja2.Environment(loader=jinja2.FileSystemLoader("sql/"))
         sql_text = sql.get_template(template).render(**kwarg)
     data = await DB().fetchall(sql_text)
+    # Перечислить список выводимых колонок
+    columns = kwarg.get("columns", None)
+    if columns:
+        result = []
+        for row in data:
+            result.append(
+                {column: row[column] for column in columns if column in row}
+            )
+        data = result
     if kwarg.get("as_classic_rows", None):
         return get_classic_rows(data)
     else:

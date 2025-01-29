@@ -5,6 +5,7 @@ import datetime
 from aiokafka import AIOKafkaProducer
 
 from micro.singleton import MetaSingleton
+
 # from micro.models.header_event import HeaderEvent, Header
 
 import micro.config as config
@@ -17,16 +18,18 @@ def serialize_datetime(obj):
         return obj.isoformat()
 
 
-class KafkaProducer(AIOKafkaProducer, metaclass=MetaSingleton):
+class KafkaProducer(metaclass=MetaSingleton):
 
-    def __init__(self):
-        if config.PRODUCER_KAFKA["bootstrap_servers"]:
-            super().__init__(
-                **config.PRODUCER_KAFKA,
-                enable_idempotence=config.ENABLE_IDEMPOTENCE,
-                retry_backoff_ms=10000,
-            )
-            logger.info(f"connect producer kafka: {config.PRODUCER_KAFKA}")
+    producer: AIOKafkaProducer = None
+
+    async def start(self):
+        self.producer = AIOKafkaProducer(
+            **config.PRODUCER_KAFKA,
+            enable_idempotence=config.ENABLE_IDEMPOTENCE,
+            retry_backoff_ms=10000,
+        )
+        logger.info(f"connect producer kafka: {config.PRODUCER_KAFKA}")
+        await self.producer.start()
 
     async def send_kafka(self, key: any, data: dict) -> None:
         """Отправить сообщение
@@ -34,13 +37,21 @@ class KafkaProducer(AIOKafkaProducer, metaclass=MetaSingleton):
         :param any key: route key
         :param dict data: сообщение
         """
-        await self.send_and_wait(
+        if not self.producer:
+            await self.start()
+        await self.producer.send_and_wait(
             topic=config.DST_TOPIC,
             key=str(key).encode(),
             value=json.dumps(
                 data, ensure_ascii=False, default=serialize_datetime
             ).encode(),
         )
+
+    async def stop(self):
+        """Остановить kafka соединение и отпустить объект"""
+        await self.producer.stop()
+        del self.producer
+        self.producer = None
 
     async def send_event(
         self, event: str, message: dict, key: any = None, obj: object = None
@@ -77,7 +88,6 @@ class KafkaProducer(AIOKafkaProducer, metaclass=MetaSingleton):
         # Отправить сообщение
         await self.send_kafka(key=key if key else "na", data=js)
         logger.info(f'send event "{event}"')
-
 
 
 # async def send_event(message: dict, event: str = None):
