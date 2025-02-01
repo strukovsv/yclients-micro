@@ -88,7 +88,7 @@ class BackgroundRunner:
                     # Событие запуска сервиса
                     await ServiceStarted(
                         service_name=app.summary,
-                        date=(datetime.now().strftime("%d.%m.%Y %H:%M:%S")),
+                        date=(datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")),
                     ).send(key=app.summary)
                     # await KafkaProducer().send_event(
                     #     event=f"service.start.{app.summary}",
