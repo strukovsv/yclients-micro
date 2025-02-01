@@ -28,7 +28,7 @@ class ServiceStarted(HeaderEvent):
     )  # noqa
 
 
-class Info(HeaderEvent):
+class InfoEvent(HeaderEvent):
     """Информационное сообщение
     bot: info.prolongation.service
     bot: info.test.message
@@ -47,7 +47,7 @@ class Info(HeaderEvent):
     )  # noqa
 
 
-class Error(HeaderEvent):
+class ErrorEvent(HeaderEvent):
     """Отправлено сообщение об ошибке"""
 
     text: Union[str, List[str]] = Field(
