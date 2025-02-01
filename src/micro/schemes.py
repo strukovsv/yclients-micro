@@ -18,7 +18,8 @@ import micro.models.api_records
 import micro.models.sync_events
 import micro.models.system_events
 import micro.models.bot_events
-import micro.models.worker_events
+import micro.models.common_events
+import micro.models.payment_events
 
 
 logger = logging.getLogger(__name__)

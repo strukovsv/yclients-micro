@@ -236,7 +236,12 @@ class Yclients(metaclass=MetaSingleton):
     async def write_transaction(self, params: dict):
         if self.debug:
             logger.info(f'debug "write_transaction" with params: {params}')
-            return {"success": True}
+            return {
+                "success": False,
+                "meta": {
+                    "message": f'Debug On: execute "write_transaction" with params: {params}'  # noqa
+                },
+            }
         else:
             _headers = await self.auth()
             async with httpx.AsyncClient() as client:
