@@ -26,6 +26,7 @@ class ServiceStarted(HeaderEvent):
     service_name: str = Field(
         ..., description="Имя сервиса: sync, worker, bi, bot и т.д."
     )  # noqa
+    date: str
 
 
 class InfoEvent(HeaderEvent):

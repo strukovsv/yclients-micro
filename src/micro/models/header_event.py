@@ -89,6 +89,6 @@ class HeaderEvent(AvroBase):
         # Отправить сообщение, если не задан ключ,
         # то взять от даты псевдослучайное число
         await KafkaProducer().send_kafka(
-            key=self.route_key(), data=self.dict()
+            key=key or self.route_key(), data=self.dict()
         )
         logger.info(f'send object "{self.header.event}"')

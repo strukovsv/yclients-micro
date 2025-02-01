@@ -20,6 +20,7 @@ from micro.kafka_consumer import KafkaConsumer, capture
 from micro.kafka_producer import KafkaProducer
 from micro.status import Status
 from micro.schemes import Schema
+from micro.models.common_events import ServiceStarted
 
 logger = logging.getLogger(__name__)
 
@@ -84,12 +85,16 @@ class BackgroundRunner:
                     async_task = asyncio.create_task(cycle())
                     if hasattr(app, "runner"):
                         asyncio.create_task(app.runner())
-
-                    await KafkaProducer().send_event(
-                        event=f"service.start.{app.summary}",
-                        key=app.summary,
-                        message={},
-                    )
+                    # Событие запуска сервиса
+                    await ServiceStarted(
+                        service_name=app.summary,
+                        date=(datetime.now().strftime("%d.%m.%Y %H:%M:%S")),
+                    ).send(key=app.summary)
+                    # await KafkaProducer().send_event(
+                    #     event=f"service.start.{app.summary}",
+                    #     key=app.summary,
+                    #     message={},
+                    # )
                     await async_task
                 except Exception:
                     traceback.print_exc()
@@ -99,9 +104,9 @@ class BackgroundRunner:
                     logger.info("Closed service")
                     # Отключиться от kafka
                     # await yclient.close()
-                    logger.info('stop kafka producer')
+                    logger.info("stop kafka producer")
                     await KafkaProducer().stop()
-                    logger.info('stop kafka consumer')
+                    logger.info("stop kafka consumer")
                     await KafkaConsumer().stop()
 
                     if hasattr(app, "del_objects"):
