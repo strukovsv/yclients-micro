@@ -103,7 +103,11 @@ async def capture(message: dict) -> None:
             # Найти свою модель
             obj = Schema().get_models().get(event_name, None)
             if obj:
+                # Получить объект из json
+                data_obj = obj(**message)
+                # Вызвать метод дополнителной сереализации
+                await data_obj.deserialization()
                 # Вызвать функцию обработчик события, передать на вход объект
-                await handler["handler"](obj(**message))
+                await handler["handler"](data_obj)
             else:
                 raise Exception(f"Не найдена model {event_name}")

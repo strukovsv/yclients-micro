@@ -25,3 +25,4 @@ class PaymentWriteTransaction(PaymentBaseClass):
     expense_id: int = Field(..., description="Статбя платежа") # noqa
     comment: str = Field(..., description="Комментарий платежа") # noqa
     # fmt: on
+
