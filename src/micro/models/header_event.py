@@ -45,6 +45,10 @@ class HeaderEvent(AvroBase):
     def route_key(self):
         return self.addresse.chat_id or self.addresse.client_id or "na"
 
+    async def deserialization(self):
+        """Абстрактный метод десереализации"""
+        pass
+
     async def send(
         self,
         key: any = None,
@@ -92,3 +96,5 @@ class HeaderEvent(AvroBase):
             key=key or self.route_key(), data=self.dict()
         )
         logger.info(f'send object "{self.header.event}"')
+
+

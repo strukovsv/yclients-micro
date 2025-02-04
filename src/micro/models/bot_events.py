@@ -104,6 +104,7 @@ class TelegramUser(BaseModel):
         await self.fill_access()
 
     async def get_chat_id_for_access(access: str) -> list:
+        """Найти пользователей telegram с заданным уровнем доступа"""
         result = await base.fetchall(
             f"""
     select p.telegram_id
@@ -114,21 +115,36 @@ class TelegramUser(BaseModel):
 
 
 class BotBaseClass(HeaderEvent):
-    user: TelegramUser  # noqa
+    """Базовое сообщение для бота"""
     chat_id: str
 
     def route_key(self):
         return self.chat_id
 
 
-class BotEnteredTextMessage(BotBaseClass):
+class BotEnteredClass(BotBaseClass):
+    """Базовое сообщение полученное от бота"""
+
+    # Данные о пользователе, какие получены из telegram api
+    user: TelegramUser  # noqa
+
+    async def deserialization(self):
+        """Загрузить данные о пользователе из БД
+        , если нет записи, то создать нового пользователя
+        , получить уровни доступа из БД"""
+        await self.user.fill()
+        # Вызвать метод предок
+        await super().deserialization()
+
+
+class BotEnteredTextMessage(BotEnteredClass):
     """Введен текст в боте"""
 
     text: str  # noqa
     message_id: int  # noqa
 
 
-class BotEnteredReplyMessage(BotBaseClass):
+class BotEnteredReplyMessage(BotEnteredClass):
     """Введен ответ на текст в боте"""
 
     text: str  # noqa
@@ -137,7 +153,7 @@ class BotEnteredReplyMessage(BotBaseClass):
     reply_message_id: int  # noqa
 
 
-class BotCallback(BotBaseClass):
+class BotCallback(BotEnteredClass):
     """Выбран пункт меню"""
 
     MAX_ELEMENTS_IN_CALLBACK: int = 5
@@ -173,7 +189,7 @@ class BotCallback(BotBaseClass):
         return ".".join(elements)
 
 
-class BotEnteredCommand(BotBaseClass):
+class BotEnteredCommand(BotEnteredClass):
     """Введена команда"""
 
     command: str
