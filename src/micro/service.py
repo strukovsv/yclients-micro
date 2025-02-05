@@ -21,6 +21,7 @@ from micro.kafka_producer import KafkaProducer
 from micro.status import Status
 from micro.schemes import Schema
 from micro.models.common_events import ServiceStarted
+from micro.telegram import send_start_service
 
 logger = logging.getLogger(__name__)
 
@@ -86,19 +87,8 @@ class BackgroundRunner:
                     if hasattr(app, "runner"):
                         asyncio.create_task(app.runner())
                     # Событие запуска сервиса
-                    await ServiceStarted(
-                        service_name=app.summary,
-                        date=(
-                            datetime.datetime.now().strftime(
-                                "%d.%m.%Y %H:%M:%S"
-                            )
-                        ),
-                    ).send(key=app.summary)
-                    # await KafkaProducer().send_event(
-                    #     event=f"service.start.{app.summary}",
-                    #     key=app.summary,
-                    #     message={},
-                    # )
+                    await send_start_service(service_name=app.summary)
+                    # Запустить обработку
                     await async_task
                 except Exception:
                     traceback.print_exc()

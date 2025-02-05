@@ -59,3 +59,7 @@ BATCH_MAX_RECORDS = config.int("BATCH_MAX_RECORDS") or 5
 SCHEMA_REGISTRY_URL = config.get("SCHEMA_REGISTRY_URL", None)
 
 IMOBIS_TOKEN = config.get("IMOBIS_TOKEN", None)
+
+# Данные бота телеграма для отправки служебных сообщений
+TELEGRAM_TOKEN = config.get("TELEGRAM_TOKEN", None)
+TELEGRAM_CHAT = config.get("TELEGRAM_CHAT", None)
