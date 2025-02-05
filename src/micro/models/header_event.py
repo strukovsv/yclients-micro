@@ -98,3 +98,11 @@ class HeaderEvent(AvroBase):
         logger.info(f'send object "{self.header.event}"')
 
 
+class PrintBaseEvent(HeaderEvent):
+    """Базовые отчеты для сотрудника и для админа"""
+
+    # fmt: off
+    # yesterday, now, tomorrow, prev-week, week, next-week, prev-month, month, next-month, YYYYMMDD
+    period: str = Field(..., description="Период формирования отчета")  # noqa
+    staff: str | None = Field(None, description="Сотрудник")  # noqa
+    # fmt: on

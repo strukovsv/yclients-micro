@@ -8,7 +8,7 @@ from pydantic import Field, BaseModel
 
 import micro.pg_ext as base
 
-from micro.models.header_event import HeaderEvent
+from micro.models.header_event import HeaderEvent, PrintBaseEvent
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,13 @@ class TimetableProlong(TimetableBaseClass):
 
     # fmt: off
     date: str = Field(..., description="Дата начала пролонгации расписания, понедельник DD.MM.YYYY")  # noqa
+    desc: str | None = Field(None, description="Расшифровка операции")  # noqa
     # fmt: on
+
+    @classmethod
+    def create(cls, id: str, desc: str):
+        """Создать объект и заполнить из расписания"""
+        return cls(date=id, desc=desc)
 
 
 class TimetableAppendActive(TimetableBaseClass):
@@ -59,3 +65,7 @@ class TimetableDeleteActive(TimetableBaseClass):
 
     def route_key(self):
         return self.activity_id
+
+
+class TimetablePrint(PrintBaseEvent):
+    """Распечатать расписание для сотрудника и для админа"""

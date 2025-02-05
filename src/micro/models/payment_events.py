@@ -8,7 +8,7 @@ from pydantic import Field, BaseModel
 
 import micro.pg_ext as base
 
-from micro.models.header_event import HeaderEvent
+from micro.models.header_event import HeaderEvent, PrintBaseEvent
 
 logger = logging.getLogger(__name__)
 
@@ -26,3 +26,26 @@ class PaymentWriteTransaction(PaymentBaseClass):
     comment: str = Field(..., description="Комментарий платежа") # noqa
     # fmt: on
 
+
+class PaymentDbtPrint(PrintBaseEvent):
+    """Распечатать приход"""
+
+    pass
+
+
+class PaymentCrdPrint(PrintBaseEvent):
+    """Распечатать расход"""
+
+    pass
+
+
+class PaymentOborotPrint(PrintBaseEvent):
+    """Распечатать свернутые денежные обороты"""
+
+    pass
+
+
+class PaymentMoneyPrint(PrintBaseEvent):
+    """Распечатать приход и расход денежных средств"""
+
+    pass

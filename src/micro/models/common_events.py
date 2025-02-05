@@ -15,8 +15,9 @@ class Report(HeaderEvent):
     """
 
     # fmt: off
-    text: Union[str, List[str]] = Field(..., description="Текст отчета, строка или массив строк") # noqa
+    text: Union[str, List[str | None], None] = Field(..., description="Текст отчета, строка или массив строк") # noqa
     type: str | None = Field(None, description="Тип отчета: html, markdown") # noqa
+    plain: int | None = Field(None, description="Использовать моноширифный текст 1")  # noqa
     # fmt: on
 
 

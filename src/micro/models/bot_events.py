@@ -323,6 +323,7 @@ class BotSendMenu(BotSendBase):
 class BotSendText(BotSendBase):
     """Послать сообщение боту"""
 
-    text: str | List[str] = Field(
-        None, description="Текс сообщения или массив сообщений"
-    )  # noqa
+    # fmt: off
+    text: str | List[str | None] = Field(None, description="Текс сообщения или массив сообщений")  # noqa
+    plain: int | None = Field(None, description="Использовать моноширифный текст 1")  # noqa
+    # fmt: on
