@@ -40,30 +40,33 @@ class BackgroundRunner:
         async def cycle():
             try:
                 while True:
-                    # Получить пакет сообщений из kafka
-                    result = await KafkaConsumer().get_messages()
-                    # Перебрать пакеты
-                    for tp, messages in result.items():
-                        # Если есть сообщение
-                        if messages:
-                            for message in messages:
-                                # Добавить в сообщение время создания
-                                message_dict = json.loads(message.value)
-                                message_dict["create_event_timestamp"] = (
-                                    datetime.datetime.fromtimestamp(
-                                        message.timestamp / 1000
-                                    ).strftime("%d.%m.%Y %H:%M:%S")
-                                )
-                                # Обработать сообщение
-                                # legasy
-                                if app.events:
-                                    await app.events.do(message_dict)
-                                # new
-                                await capture(message_dict)
+                    if config.SRC_TOPIC:
+                        # Получить пакет сообщений из kafka
+                        result = await KafkaConsumer().get_messages()
+                        # Перебрать пакеты
+                        for tp, messages in result.items():
+                            # Если есть сообщение
+                            if messages:
+                                for message in messages:
+                                    # Добавить в сообщение время создания
+                                    message_dict = json.loads(message.value)
+                                    message_dict["create_event_timestamp"] = (
+                                        datetime.datetime.fromtimestamp(
+                                            message.timestamp / 1000
+                                        ).strftime("%d.%m.%Y %H:%M:%S")
+                                    )
+                                    # Обработать сообщение
+                                    # legasy
+                                    if app.events:
+                                        await app.events.do(message_dict)
+                                    # new
+                                    await capture(message_dict)
 
-                            await KafkaConsumer().partition_commit(
-                                tp, messages[-1].offset + 1
-                            )
+                                await KafkaConsumer().partition_commit(
+                                    tp, messages[-1].offset + 1
+                                )
+                    else:
+                        await asyncio.sleep(60)
             except Exception:
                 traceback.print_exc()
                 raise

@@ -562,3 +562,23 @@ class Yclients(metaclass=MetaSingleton):
 
     async def close(self):
         pass
+
+
+async def sms_send_message(message):
+    """Отправить sms сообщение через yclients"""
+    # Получить идентификатор клиента из сообщения
+    client_ids = message.get("client_id", None)
+    # Получить текст сообщения
+    texts = message.get("text", None)
+    # если отчет напрвляется клиенту через sms yclients
+    if client_ids and texts:
+        # Если несколько текстов отправить отдельными сообщениями
+        for text in texts if isinstance(texts, list) else [texts]:
+            # Если несколько клиентов
+            for client_id in (
+                client_ids if isinstance(client_ids, list) else [client_ids]
+            ):
+                # Отправить sms сообщение yclients
+                await Yclients().send_message(
+                    message=text, client_ids=[client_id]
+                )

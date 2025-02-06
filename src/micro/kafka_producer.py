@@ -23,13 +23,14 @@ class KafkaProducer(metaclass=MetaSingleton):
     producer: AIOKafkaProducer = None
 
     async def start(self):
-        self.producer = AIOKafkaProducer(
-            **config.PRODUCER_KAFKA,
-            enable_idempotence=config.ENABLE_IDEMPOTENCE,
-            retry_backoff_ms=10000,
-        )
-        logger.info(f"connect producer kafka: {config.PRODUCER_KAFKA}")
-        await self.producer.start()
+        if config.DST_TOPIC:
+            self.producer = AIOKafkaProducer(
+                **config.PRODUCER_KAFKA,
+                enable_idempotence=config.ENABLE_IDEMPOTENCE,
+                retry_backoff_ms=10000,
+            )
+            logger.info(f"connect producer kafka: {config.PRODUCER_KAFKA}")
+            await self.producer.start()
 
     async def send_kafka(self, key: any, data: dict) -> None:
         """Отправить сообщение
@@ -49,9 +50,10 @@ class KafkaProducer(metaclass=MetaSingleton):
 
     async def stop(self):
         """Остановить kafka соединение и отпустить объект"""
-        await self.producer.stop()
-        del self.producer
-        self.producer = None
+        if config.DST_TOPIC:
+            await self.producer.stop()
+            del self.producer
+            self.producer = None
 
     async def send_event(
         self, event: str, message: dict, key: any = None, obj: object = None

@@ -29,18 +29,18 @@ PG_PORT = config.DB_PG_PORT
 CONSUMER_KAFKA = {
     # Обязательные параметры подключения
     "bootstrap_servers": config.get("SRC_BOOTSTRAP_SERVERS", None),
-    "group_id": config.SRC_GROUP_ID,
+    "group_id": config.get("SRC_GROUP_ID", None),
 }
 
-PRODUCER_ID = config.get("SRC_GROUP_ID", "na")
+PRODUCER_ID = config.get("SRC_GROUP_ID", None)
 # Подключение к кафка
 PRODUCER_KAFKA = {
     # Обязательные параметры подключения
     "bootstrap_servers": config.get("DST_BOOTSTRAP_SERVERS", None),
 }
 # Топик отправки сообщений
-SRC_TOPIC = config.TOPIC
-DST_TOPIC = config.TOPIC
+SRC_TOPIC = config.get("TOPIC", None)
+DST_TOPIC = config.get("TOPIC", None)
 # When set to True, the producer will ensure that exactly one copy
 # of each message is written in the stream.
 # If False, producer retries due to broker failures, etc.,

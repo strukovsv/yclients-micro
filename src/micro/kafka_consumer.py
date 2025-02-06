@@ -57,9 +57,10 @@ class KafkaConsumer(metaclass=MetaSingleton):
 
     async def stop(self):
         """Остановить kafka соединение и отпустить объект"""
-        await self.consumer.stop()
-        del self.consumer
-        self.consumer = None
+        if config.SRC_TOPIC:
+            await self.consumer.stop()
+            del self.consumer
+            self.consumer = None
 
 
 message_handlers: list = []
