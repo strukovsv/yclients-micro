@@ -22,6 +22,7 @@ import micro.models.common_events
 import micro.models.payment_events
 import micro.models.timetable_events
 import micro.models.client_events
+import micro.models.cards_events
 
 
 logger = logging.getLogger(__name__)
