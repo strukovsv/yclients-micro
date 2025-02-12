@@ -37,6 +37,18 @@ def getenv(name: str, default: str = None):
         return None
 
 
+def add_months(current_date, months_to_add):
+    new_date = datetime(
+        current_date.year + (current_date.month + months_to_add - 1) // 12,
+        (current_date.month + months_to_add - 1) % 12 + 1,
+        current_date.day,
+        current_date.hour,
+        current_date.minute,
+        current_date.second,
+    )
+    return new_date
+
+
 def get_period(type_period: str, sformat: str = None, current_date=None):
     # now = datetime.now() + timedelta(hours=7)
     if type_period.isdigit():
@@ -78,6 +90,13 @@ def get_period(type_period: str, sformat: str = None, current_date=None):
             dt = now.replace(day=1)
             date2 = dt - timedelta(days=1)
             date1 = date2.replace(day=1)
+        elif type_period.lower() == "current-month":
+            date1 = now.replace(day=1)
+            date2 = add_months(date1, 1) - timedelta(days=1)
+        elif type_period.lower() == "next-month":
+            dt = now.replace(day=1)
+            date1 = add_months(dt, 1)
+            date2 = add_months(dt, 2) - timedelta(days=1)
         elif type_period.lower() == "month":
             date1 = now.replace(day=1)
             date2 = now
@@ -109,5 +128,3 @@ def get_classic_rows(rows: list) -> list:
                 ]
             )
     return result
-
-
