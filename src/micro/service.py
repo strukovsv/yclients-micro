@@ -76,8 +76,7 @@ class BackgroundRunner:
                 logger.info(
                     f"service works with errors :( sleep {config.SLEEP_AFTER_ERROR_SECOND}"  # noqa
                 )
-                # await asyncio.sleep(config.SLEEP_AFTER_ERROR_SECOND)
-                await asyncio.sleep(15)
+                await asyncio.sleep(config.SLEEP_AFTER_ERROR_SECOND)
                 # Попробовать еще раз
                 await Status().set_ok()
             else:
@@ -86,13 +85,15 @@ class BackgroundRunner:
                     # logger.info('start kafka producer')
                     # await KafkaProducer().start()
                     # После запуска kafka запустить сервис
-                    async_task = asyncio.create_task(cycle())
+                    async_tasks = []
+                    async_tasks.append(asyncio.create_task(cycle()))
                     if hasattr(app, "runner"):
-                        asyncio.create_task(app.runner())
+                        async_tasks.append(asyncio.create_task(app.runner()))
                     # Событие запуска сервиса
                     await send_start_service(service_name=app.summary)
                     # Запустить обработку
-                    await async_task
+                    for async_task in async_tasks:
+                        await async_task
                 except Exception:
                     traceback.print_exc()
                     # raise
