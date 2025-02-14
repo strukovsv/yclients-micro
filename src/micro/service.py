@@ -95,7 +95,8 @@ class BackgroundRunner:
                     for async_task in async_tasks:
                         await async_task
                 except Exception:
-                    traceback.print_exc()
+                    # traceback.print_exc()
+                    logger.error(traceback.format_exc())
                     # raise
                     # logger.info(f"exception: {e}")
                 finally:
