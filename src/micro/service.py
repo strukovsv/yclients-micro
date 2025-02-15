@@ -85,15 +85,16 @@ class BackgroundRunner:
                     # logger.info('start kafka producer')
                     # await KafkaProducer().start()
                     # После запуска kafka запустить сервис
-                    async_tasks = []
-                    async_tasks.append(asyncio.create_task(cycle()))
-                    if hasattr(app, "runner"):
-                        async_tasks.append(asyncio.create_task(app.runner()))
-                    # Событие запуска сервиса
-                    await send_start_service(service_name=app.summary)
-                    # Запустить обработку
-                    for async_task in async_tasks:
-                        await async_task
+                    async with asyncio.TaskGroup() as tg:
+                        # Запустить обработку
+                        logger.info('start task 1')
+                        tg.create_task(cycle())
+                        if hasattr(app, "runner"):
+                            logger.info('start task 2')
+                            tg.create_task(app.runner())
+                        # Событие запуска сервиса
+                        await send_start_service(service_name=app.summary)
+                        # await asyncio.gather(*async_tasks, return_exceptions=True)
                 except Exception:
                     # traceback.print_exc()
                     logger.error(traceback.format_exc())
