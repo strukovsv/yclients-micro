@@ -15,17 +15,6 @@ class KafkaConsumer(metaclass=MetaSingleton):
 
     consumer: AIOKafkaConsumer = None
 
-    # def __init__(self):
-    # if config.CONSUMER_KAFKA["bootstrap_servers"]:
-    #     super().__init__(
-    #         config.SRC_TOPIC,
-    #         **config.CONSUMER_KAFKA,
-    #         enable_auto_commit=config.KAFKA_ENABLE_AUTO_COMMIT,
-    #         auto_offset_reset="earliest",
-    #         retry_backoff_ms=10000,
-    #     )
-    #     logger.info(f"connect consumer kafka: {config.CONSUMER_KAFKA}")
-
     async def start(self):
         self.consumer = AIOKafkaConsumer(
             config.SRC_TOPIC,
@@ -34,9 +23,7 @@ class KafkaConsumer(metaclass=MetaSingleton):
             auto_offset_reset="earliest",
             retry_backoff_ms=10000,
         )
-        logger.info(
-            f"connect consumer kafka: {config.CONSUMER_KAFKA}"
-        )
+        logger.info(f"connect consumer kafka: {config.CONSUMER_KAFKA}")
         await self.consumer.start()
 
     async def get_messages(self):
@@ -57,7 +44,7 @@ class KafkaConsumer(metaclass=MetaSingleton):
 
     async def stop(self):
         """Остановить kafka соединение и отпустить объект"""
-        if config.SRC_TOPIC:
+        if config.SRC_TOPIC and self.consumer:
             await self.consumer.stop()
             del self.consumer
             self.consumer = None

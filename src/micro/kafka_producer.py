@@ -50,7 +50,7 @@ class KafkaProducer(metaclass=MetaSingleton):
 
     async def stop(self):
         """Остановить kafka соединение и отпустить объект"""
-        if config.DST_TOPIC:
+        if config.DST_TOPIC and self.producer:
             await self.producer.stop()
             del self.producer
             self.producer = None

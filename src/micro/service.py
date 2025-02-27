@@ -87,39 +87,30 @@ class BackgroundRunner:
                     # После запуска kafka запустить сервис
                     async with asyncio.TaskGroup() as tg:
                         # Запустить обработку
-                        logger.info('start task 1')
-                        tg.create_task(cycle())
+                        logger.info("start task cycle")
+                        tg.create_task(cycle(), name="cycle")
                         if hasattr(app, "runner"):
-                            logger.info('start task 2')
-                            tg.create_task(app.runner())
+                            logger.info("start task runner")
+                            tg.create_task(app.runner(), name="runner")
                         # Событие запуска сервиса
                         await send_start_service(service_name=app.summary)
-                        # await asyncio.gather(*async_tasks, return_exceptions=True)
-                except Exception:
-                    # traceback.print_exc()
+                except BaseException:
                     logger.error(traceback.format_exc())
-                    # raise
-                    # logger.info(f"exception: {e}")
                 finally:
-                    logger.info("Closed service")
+                    logger.info("start close service")
                     # Отключиться от kafka
-                    # await yclient.close()
                     logger.info("stop kafka producer")
                     await KafkaProducer().stop()
                     logger.info("stop kafka consumer")
                     await KafkaConsumer().stop()
 
                     if hasattr(app, "del_objects"):
+                        logger.info("del_objects")
                         dels = asyncio.create_task(app.del_objects())
                         await dels
 
-                    # Закрыть kafka
                     await Status().set_error()
-                    # await asyncio.sleep(
-                    #     app.runner_period_secs
-                    #     if hasattr(app, "runner_period_secs")
-                    #     else 120
-                    # )
+                    logger.info("stop service")
 
 
 runner = BackgroundRunner()
