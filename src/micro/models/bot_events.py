@@ -35,7 +35,7 @@ class TelegramUser(BaseModel):
     id: str  # noqa
     first_name: str  # noqa
     last_name: str | None  # noqa
-    username: str  # noqa
+    username: str | None  # noqa
     language_code: str  # noqa
 
     access: list | None = []  # noqa
