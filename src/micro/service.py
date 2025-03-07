@@ -48,6 +48,7 @@ class BackgroundRunner:
                             # Если есть сообщение
                             if messages:
                                 for message in messages:
+                                    logger.info(f'{message=}')
                                     # Добавить в сообщение время создания
                                     message_dict = json.loads(message.value)
                                     message_dict["create_event_timestamp"] = (
