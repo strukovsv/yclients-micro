@@ -151,9 +151,9 @@ class BotEnteredClass(BotBaseClass):
     def last_data(self) -> str:
         """Вернуть data последний отправленный клиенту"""
         if self.history:
-            return self.history[len(self.history) - 1].get("data", None)
+            return self.history[len(self.history) - 1].get("data", {})
         else:
-            return None
+            return {}
 
 
 class BotEnteredTextMessage(BotEnteredClass):
@@ -273,6 +273,7 @@ class BotSendMenu(BotSendBase):
         chain_uuid: str = None,
         prefix: str = None,
         update: bool = False,
+        data: object = None,
     ):
         """Отправить сообщение на создание меню в боте
 
@@ -308,7 +309,7 @@ class BotSendMenu(BotSendBase):
             # Кол-во элементов в строке
             row_width=row_width,
             update=update,
-        ).send()
+        ).add(data=data).send()
 
     async def send_menu_items(
         obj,
@@ -333,6 +334,7 @@ class BotSendMenu(BotSendBase):
         query: str = None,
         row_width: int = 3,
         update: bool = False,
+        data: object = None,
     ):
         items = []
         logger.info(f"{elements=}")
@@ -346,6 +348,7 @@ class BotSendMenu(BotSendBase):
             query=query,
             prefix=prefix,
             update=update,
+            data=data,
         )
 
 
