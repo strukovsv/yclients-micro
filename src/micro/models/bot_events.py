@@ -116,6 +116,7 @@ class TelegramUser(BaseModel):
 
 class BotBaseClass(HeaderEvent):
     """Базовое сообщение для бота"""
+
     chat_id: str
 
     def route_key(self):
@@ -128,6 +129,10 @@ class BotEnteredClass(BotBaseClass):
     # Данные о пользователе, какие получены из telegram api
     user: TelegramUser  # noqa
 
+    history: list | None = Field(
+        None, description="История отправленных сообщений в диалоге"
+    )  # noqa
+
     async def deserialization(self):
         """Загрузить данные о пользователе из БД
         , если нет записи, то создать нового пользователя
@@ -135,6 +140,20 @@ class BotEnteredClass(BotBaseClass):
         await self.user.fill()
         # Вызвать метод предок
         await super().deserialization()
+
+    def last_stage(self) -> str:
+        """Вернуть stage последний отправленный клиенту"""
+        if self.history:
+            return self.history[len(self.history) - 1].get("stage", None)
+        else:
+            return None
+
+    def last_data(self) -> str:
+        """Вернуть data последний отправленный клиенту"""
+        if self.history:
+            return self.history[len(self.history) - 1].get("data", None)
+        else:
+            return None
 
 
 class BotEnteredTextMessage(BotEnteredClass):
@@ -213,9 +232,19 @@ class BotSendBase(HeaderEvent):
     chat_id: int = Field(
         ..., description="Идентификатор чата в telegram"
     )  # noqa
+    history: list | None = Field(
+        None, description="История отправленных сообщений в диалоге"
+    )  # noqa
 
     def route_key(self):
         return self.chat_id
+
+    def add(self, stage: str = "stage", data: any = None):
+        """Добавить в историю сообщение"""
+        if self.history is None:
+            self.history = []
+        self.history.append({"stage": stage, "data": data})
+        return self
 
 
 class BotSendCalendar(BotSendBase):
