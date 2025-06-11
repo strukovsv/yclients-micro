@@ -62,10 +62,11 @@ def get_period(type_period: str, sformat: str = None, current_date=None):
             name = arr[1]
         else:
             num = None
-        if type_period.lower() == "yesterday":
+        tp = type_period.lower()
+        if tp in ["yesterday", "p1"]:
             date1 = now - timedelta(days=1)
             date2 = date1
-        elif type_period.lower() == "week":
+        elif tp in ["week"]:
             date1 = now - timedelta(days=7)
             date2 = now
         elif num is not None and name == "week":
@@ -73,34 +74,34 @@ def get_period(type_period: str, sformat: str = None, current_date=None):
             dt = now + timedelta(days=(7 * num))
             date1 = dt - timedelta(days=dt.weekday())
             date2 = date1 + timedelta(days=6)
-        elif type_period.lower() == "current-week":
+        elif tp in ["current-week", "p5"]:
             date1 = now - timedelta(days=now.weekday())
             date2 = date1 + timedelta(days=6)
-        elif type_period.lower() == "prev-week":
+        elif tp in ["prev-week", "p4"]:
             # День на следующей недели
             dt = now - timedelta(days=7)
             date1 = dt - timedelta(days=dt.weekday())
             date2 = date1 + timedelta(days=6)
-        elif type_period.lower() == "next-week":
+        elif tp in ["next-week", "p6"]:
             # День на следующей недели
             dt = now + timedelta(days=7)
             date1 = dt - timedelta(days=dt.weekday())
             date2 = date1 + timedelta(days=6)
-        elif type_period.lower() == "prev-month":
+        elif tp in ["prev-month", "p7"]:
             dt = now.replace(day=1)
             date2 = dt - timedelta(days=1)
             date1 = date2.replace(day=1)
-        elif type_period.lower() == "current-month":
+        elif tp in ["current-month", "p8"]:
             date1 = now.replace(day=1)
             date2 = add_months(date1, 1) - timedelta(days=1)
-        elif type_period.lower() == "next-month":
+        elif tp in ["next-month", "p9"]:
             dt = now.replace(day=1)
             date1 = add_months(dt, 1)
             date2 = add_months(dt, 2) - timedelta(days=1)
-        elif type_period.lower() == "month":
+        elif tp in ["month"]:
             date1 = now.replace(day=1)
             date2 = now
-        elif type_period.lower() == "tomorrow":
+        elif tp in ["tomorrow", "p3"]:
             date1 = now + timedelta(days=1)
             date2 = date1
         else:  # message["type"] == "now"
