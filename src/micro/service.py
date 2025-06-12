@@ -94,6 +94,8 @@ class BackgroundRunner:
                             logger.info("start task runner")
                             tg.create_task(app.runner(), name="runner")
                         # Событие запуска сервиса
+                        # Отправим независимо от жизни других сервисов,
+                        # непосредственно в телеграмм
                         await send_start_service(service_name=app.summary)
                 except BaseException:
                     logger.error(traceback.format_exc())
