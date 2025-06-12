@@ -293,7 +293,11 @@ class BotSendMenu(BotSendBase):
                     item_name=item.title,
                     callback_data=(
                         (
-                            f"{prefix}.{item.callback_data}"
+                            (
+                                item.callback_data
+                                if prefix == "*"
+                                else f"{prefix}.{item.callback_data}"
+                            )
                             if prefix
                             else f"{item.callback_data}{item.callback_data2}"
                         )
