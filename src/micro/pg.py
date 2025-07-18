@@ -50,9 +50,22 @@ class DB(metaclass=MetaSingleton):
     async def execute(self, query, params=None):
         await self.open_pool()
         async with self.pool.connection() as conn:
-            async with conn.cursor() as acur:
-                PG_EXECUTE_CNT.inc()
-                await acur.execute(query, params)
+            if isinstance(query, list):
+                async with conn.transaction():
+                    async with conn.cursor() as acur:
+                        for item in query:
+                            logger.info(f'{item=}')
+                            PG_EXECUTE_CNT.inc()
+                            await acur.execute(
+                                item["sql"], item.get("params", {})
+                            )
+                            logger.info(f'{acur.rowcount=}')
+                        return None
+            else:
+                async with conn.cursor() as acur:
+                    PG_EXECUTE_CNT.inc()
+                    await acur.execute(query, params)
+                    return acur.rowcount
 
     async def fetchall(self, query, params=None):
         await self.open_pool()

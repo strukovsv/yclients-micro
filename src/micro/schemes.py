@@ -23,6 +23,8 @@ import micro.models.payment_events
 import micro.models.timetable_events
 import micro.models.client_events
 import micro.models.cards_events
+import micro.models.cron_events
+import micro.models.buh_events
 
 
 logger = logging.getLogger(__name__)

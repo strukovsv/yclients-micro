@@ -55,3 +55,9 @@ class ErrorEvent(HeaderEvent):
     text: Union[str, List[str]] = Field(
         ..., description="Текст сообщения об ошибке, строка или массив строк"
     )  # noqa
+
+
+class Live(HeaderEvent):
+    """Отправить сервисам запрос ответить жив он"""
+
+    pass

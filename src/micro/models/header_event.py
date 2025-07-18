@@ -20,7 +20,8 @@ class Header(BaseModel):
     # fmt: off
     event: str | None = Field(None, description="Имя сообщения") # noqa
     uuid: str | None = Field(None, description="Идентификатор сообщения") # noqa
-    chain_uuid: str | None = Field(None, description="Идентификатор цепочки сообщений") # noqa
+    parent: str | None = Field(None, description="Идентификатор родительского сообщения") # noqa
+    root: str | None = Field(None, description="Идентификатор цепочки сообщений") # noqa
     desc: str | None = Field(None, description="Описание сообщения") # noqa
     version: str | None = Field(None, description="Версия сообщения") # noqa
     source: str | None = Field(None, description="Источник сообщения") # noqa
@@ -52,12 +53,12 @@ class HeaderEvent(AvroBase):
     async def send(
         self,
         key: any = None,
-        chain_uuid: str = None,
         desc: str = None,
         version: str = None,
         client_id: str = None,
         addresse: Addresse = None,
         chat_id: str = None,
+        parent: object = None,
     ) -> None:
         """Отправить объект в поток
 
@@ -89,7 +90,21 @@ class HeaderEvent(AvroBase):
             client_id=client_id, chat_id=chat_id
         )
         # Сформировать атрибут для цепочки сообщений
-        self.header.chain_uuid = chain_uuid or self.header.uuid
+        # Если задан родитель в отправке, то из него взять значение
+        self.header.root = (
+            parent.header.root
+            if parent and hasattr(parent.header, "root")
+            else self.header.uuid
+        )
+        # Взять родителя сообщения, если первое сообщение в цепочке,
+        # то родителя не ставим
+        self.header.parent = (
+            parent.header.uuid
+            if parent and hasattr(parent.header, "uuid")
+            else None
+        )
+        logger.info(f'{parent=}')
+        logger.info(f'{self.header=}')
         # Отправить сообщение, если не задан ключ,
         # то взять от даты псевдослучайное число
         await KafkaProducer().send_kafka(

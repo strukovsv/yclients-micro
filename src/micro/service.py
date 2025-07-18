@@ -20,8 +20,10 @@ from micro.kafka_consumer import KafkaConsumer, capture
 from micro.kafka_producer import KafkaProducer
 from micro.status import Status
 from micro.schemes import Schema
-from micro.models.common_events import ServiceStarted
+from micro.models.common_events import ServiceStarted, InfoEvent, Live
 from micro.telegram import send_start_service
+
+from micro.kafka_consumer import event_handler
 
 logger = logging.getLogger(__name__)
 
@@ -267,3 +269,10 @@ class EndpointFilter(logging.Filter):
 
 
 logging.getLogger("uvicorn.access").addFilter(EndpointFilter())
+
+
+@event_handler("Live")
+async def live_event(obj: Live):
+    """Сообщение live"""
+    date = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+    await InfoEvent(text=f"😊 {date} : service {app.summary} is live !").send()

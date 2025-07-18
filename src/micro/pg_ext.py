@@ -41,7 +41,7 @@ async def select(template: str, **kwarg):
     else:
         sql = jinja2.Environment(loader=jinja2.FileSystemLoader("sql/"))
         sql_text = sql.get_template(template).render(**kwarg)
-    data = await DB().fetchall(sql_text)
+    data = await DB().fetchall(sql_text, kwarg.get("params", {}))
     # Перечислить список выводимых колонок
     columns = kwarg.get("columns", None)
     if columns:
@@ -58,7 +58,7 @@ async def select(template: str, **kwarg):
 
 
 async def execute(query, params=None):
-    await DB().execute(query, params)
+    return await DB().execute(query, params)
 
 
 async def fetchall(query, params=None):

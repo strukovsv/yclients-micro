@@ -20,7 +20,7 @@ def hide_passwords(value: dict, key: str = None) -> dict:
         return [hide_passwords(elem) for elem in value]
     else:
         if key:
-            for key_denied in ["PASS", "TOKEN", "ACCESS_KEY", "PWD"]:
+            for key_denied in ["PASS", "TOKEN", "ACCESS_KEY", "PWD", "SECRET"]:
                 if key_denied in key.upper():
                     return "<hidden>"
         return value

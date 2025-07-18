@@ -270,7 +270,7 @@ class BotSendMenu(BotSendBase):
         items: list,
         query: str = None,
         row_width: int = None,
-        chain_uuid: str = None,
+        parent: object = None,
         prefix: str = None,
         update: bool = False,
         data: object = None,
@@ -313,7 +313,7 @@ class BotSendMenu(BotSendBase):
             # Кол-во элементов в строке
             row_width=row_width,
             update=update,
-        ).add(data=data).send()
+        ).add(data=data).send(parent=parent)
 
     async def send_menu_items(
         obj,
@@ -325,7 +325,7 @@ class BotSendMenu(BotSendBase):
         await BotSendMenu.send_menu(
             chat_id=obj.chat_id,
             items=items,
-            chain_uuid=obj.header.chain_uuid,
+            parent=obj,
             row_width=row_width,
             query=query,
             prefix=prefix,
@@ -347,7 +347,7 @@ class BotSendMenu(BotSendBase):
         await BotSendMenu.send_menu(
             chat_id=obj.chat_id,
             items=items,
-            chain_uuid=obj.header.chain_uuid,
+            parent=obj,
             row_width=row_width,
             query=query,
             prefix=prefix,

@@ -61,5 +61,5 @@ async def send_start_service(service_name: str):
     date = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
     await send_telegram(
         message="\U0001F680"
-        + f" service <b>{service_name}</b> launched on {date}"
+        + f"{date} : service <b>{service_name}</b> launched !"
     )
