@@ -56,3 +56,9 @@ class MailMessage(HeaderEvent):
             return match.group(1)
         else:
             return None
+
+    def render(self, text: str) -> str:
+        for pattern in re.findall(r"\^.+\$", text):
+            logger.info(f'{pattern}')
+            text = text.replace(pattern, self.find(pattern))
+        return text
