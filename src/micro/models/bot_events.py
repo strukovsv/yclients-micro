@@ -363,3 +363,11 @@ class BotSendText(BotSendBase):
     text: str | List[str | None] = Field(None, description="Текс сообщения или массив сообщений")  # noqa
     plain: int | None = Field(None, description="Использовать моноширифный текст 1")  # noqa
     # fmt: on
+
+
+class BotSendPhoto(BotSendBase):
+    """Послать рисунок боту"""
+
+    # fmt: off
+    photo: str = Field(..., description="Изображение")  # noqa
+    caption: str | None = Field(None, description="Подпись изображения")  # noqa
