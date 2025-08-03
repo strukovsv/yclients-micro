@@ -362,6 +362,7 @@ class BotSendText(BotSendBase):
     # fmt: off
     text: str | List[str | None] = Field(None, description="Текс сообщения или массив сообщений")  # noqa
     plain: int | None = Field(None, description="Использовать моноширифный текст 1")  # noqa
+    format: str | None = Field(None, description="Формат сообщения (markdown (по умолчанию) и html по умолчанию)")  # noqa
     # fmt: on
 
 

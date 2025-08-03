@@ -47,6 +47,7 @@ class InfoEvent(HeaderEvent):
         ...,
         description="Текст информационного сообщения, строка или массив строк",
     )  # noqa
+    format: str | None = Field(None, description="Формат сообщения. Markdown (по умолчанию) или html", )  # noqa
 
 
 class ErrorEvent(HeaderEvent):
