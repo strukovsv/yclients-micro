@@ -27,6 +27,15 @@ class PaymentWriteTransaction(PaymentBaseClass):
     # fmt: on
 
 
+class PaymentWriteTransaction2(PaymentBaseClass):
+    """Провести платежную транзакцию по шаблону"""
+
+    # fmt: off
+    sum: int = Field(..., description="Сумма платежа") # noqa
+    payments_id: int = Field(..., description="Шаблон платежа") # noqa
+    # fmt: on
+
+
 class PaymentDbtPrint(PrintBaseEvent):
     """Распечатать приход"""
 
