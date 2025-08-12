@@ -103,8 +103,8 @@ class HeaderEvent(AvroBase):
             if parent and hasattr(parent.header, "uuid")
             else None
         )
-        logger.info(f'{parent=}')
-        logger.info(f'{self.header=}')
+        # logger.info(f'{parent=}')
+        # logger.info(f'{self.header=}')
         # Отправить сообщение, если не задан ключ,
         # то взять от даты псевдослучайное число
         await KafkaProducer().send_kafka(

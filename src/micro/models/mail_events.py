@@ -30,14 +30,14 @@ class MailMessage(HeaderEvent):
         for line in self.plain.split("\n"):
             logger.info(f"{line}")
 
-    def in_subject(self, substr: str) -> bool:
+    def in_subject(self, text: str) -> bool:
         """Проверяет вхождение строки в subject письма,
         не regex !!!
 
         :param str substr: вхождение
         :return bool: входит подстрока
         """
-        return substr.lower() in self.subject.lower()
+        return self.subject.lower().find(text.lower()) >= 0
 
     def text(self) -> str:
         """Получить plain тело как одна строка.
@@ -59,7 +59,7 @@ class MailMessage(HeaderEvent):
 
     def render(self, text: str) -> str:
         for pattern in re.findall(r"\^.+\$", text):
-            logger.info(f'{pattern}')
+            # logger.info(f'{pattern}')
             resultStr = str(self.find(pattern))
             text = text.replace(pattern, resultStr)
         return text
