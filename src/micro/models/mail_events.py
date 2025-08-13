@@ -37,7 +37,7 @@ class MailMessage(HeaderEvent):
         :param str substr: вхождение
         :return bool: входит подстрока
         """
-        return self.subject.lower().find(text.lower()) >= 0
+        return self.subject.lower().replace("\xa0", " ").find(text.lower()) >= 0
 
     def text(self) -> str:
         """Получить plain тело как одна строка.
