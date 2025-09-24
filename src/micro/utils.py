@@ -1,4 +1,5 @@
 import os
+import re
 import logging
 from datetime import datetime, timedelta, date
 
@@ -129,3 +130,101 @@ def get_classic_rows(rows: list) -> list:
                 ]
             )
     return result
+
+
+def _mask_russian_phone(phone: str) -> str:
+    digits = re.sub(r"\D", "", phone)
+
+    if digits.startswith("8") and len(digits) == 11:
+        digits = "7" + digits[1:]
+    elif len(digits) == 10 and digits.startswith("9"):
+        digits = "7" + digits
+
+    if len(digits) < 8:
+        return phone
+
+    first4 = digits[:4]
+    last4 = digits[-4:]
+
+    if phone.startswith("+7"):
+        return f"+7{first4[1:]}•••{last4}"
+    elif phone.lstrip().startswith("8"):
+        return f"8{first4[1:]}•••{last4}"
+    else:
+        return f"{first4}•••{last4}"
+
+
+def mask_phone_recursive(obj):
+    """
+    Рекурсивно обходит словарь (и вложенные списки/словари),
+    и маскирует все значения по ключу "phone" по шаблону:
+        +79233549672 → +7923•••9672
+    (оставляет первые 4 символа и последние 4 цифры, середина — •••)
+
+    Не мутирует оригинал — возвращает копию.
+    """
+    if isinstance(obj, dict):
+        return {
+            key: (
+                _mask_russian_phone(value)
+                if key == "phone" and isinstance(value, str)
+                else mask_phone_recursive(value)
+            )
+            for key, value in obj.items()
+        }
+    elif isinstance(obj, list):
+        return [mask_phone_recursive(item) for item in obj]
+    elif isinstance(obj, tuple):
+        return tuple(mask_phone_recursive(item) for item in obj)
+    else:
+        return obj
+
+
+def str_to_timedelta(time_str: str) -> timedelta:
+    """
+    Конвертирует человекочитаемую строку в объект timedelta.
+
+    Поддерживаемые единицы:
+        w — недели
+        d — дни
+        h — часы
+        m — минуты
+        s — секунды
+
+    Пробелы необязательны. Регистр не важен.
+
+    Примеры:
+        "2h30m" → 2 часа 30 минут
+        "1w 1d" → 8 дней
+        "90s" → 1 минута 30 секунд
+
+    :param time_str: Строка с временным интервалом (например, "30s", "1d2h")
+    :return: Объект timedelta
+    :raises ValueError: Если строка пуста или не распознана
+    """
+    if not isinstance(time_str, str) or not time_str.strip():
+        raise ValueError("Входная строка не может быть пустой")
+
+    # Регулярное выражение: число + необязательные пробелы + единица измерения
+    pattern = r"(\d+)\s*([wdhms])"
+    matches = re.findall(pattern, time_str.lower())
+
+    if not matches:
+        raise ValueError(
+            f"Не удалось распознать временной интервал: {time_str}"
+        )
+
+    total_seconds = 0
+    multipliers = {
+        "w": 7 * 86400,  # неделя
+        "d": 86400,  # день
+        "h": 3600,  # час
+        "m": 60,  # минута
+        "s": 1,  # секунда
+    }
+
+    for value, unit in matches:
+        num = int(value)
+        total_seconds += num * multipliers[unit]
+
+    return timedelta(seconds=total_seconds)

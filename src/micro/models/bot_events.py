@@ -109,8 +109,9 @@ class TelegramUser(BaseModel):
             f"""
     select p.telegram_id
     from passwd p
-    where concat(',', lower(p.access), ',') like '%,_{access.strip().lower()},%'""",
+    where concat(',', lower(replace(p.access, ' ', '')), ',') like '%,{access.strip().lower()},%'""",
         )
+        logger.info(f'get_chat_id_for_access: {result=}')
         return [int(user["telegram_id"]) for user in result]
 
 

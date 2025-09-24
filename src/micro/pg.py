@@ -54,12 +54,10 @@ class DB(metaclass=MetaSingleton):
                 async with conn.transaction():
                     async with conn.cursor() as acur:
                         for item in query:
-                            logger.info(f'{item=}')
                             PG_EXECUTE_CNT.inc()
                             await acur.execute(
                                 item["sql"], item.get("params", {})
                             )
-                            logger.info(f'{acur.rowcount=}')
                         return None
             else:
                 async with conn.cursor() as acur:

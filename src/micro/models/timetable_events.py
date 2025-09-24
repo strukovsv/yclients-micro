@@ -17,20 +17,6 @@ class TimetableBaseClass(HeaderEvent):
     """Базовый класс для расписания"""
 
 
-class FirstClientVisit(TimetableBaseClass):
-    """Отправить сообщение клиенту о первой тренировке"""
-
-    # fmt: off
-    id: str = Field(..., description="Идентификатор клиента")  # noqa
-    desc: str | None = Field(None, description="Расшифровка операции")  # noqa
-    # fmt: on
-
-    @classmethod
-    def create(cls, id: str, desc: str):
-        """Создать объект и заполнить из расписания"""
-        return cls(id=id, desc=desc)
-
-
 class TimetableProlong(TimetableBaseClass):
     """Пролонгировать тренировки на неделю
     шаблон тренировко в таблице week_schedule

@@ -33,7 +33,6 @@ async def update(table_name: str, id: int, js: dict, func=None) -> str:
 async def select(template: str, **kwarg):
     template_path = kwarg.get("template_path", None)
     if template_path:
-        logger.info(f"{template_path=} {template=}")
         sql_template = jinja2.Environment(
             loader=jinja2.FileSystemLoader(template_path)
         )
