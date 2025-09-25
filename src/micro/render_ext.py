@@ -41,5 +41,5 @@ select name, template from templates c"""
             **{"stages": stages},
         }
     )
-    logger.info(f"{result=}")
+    # logger.info(f"{result=}")
     return await render.to_text(template=template, **result)

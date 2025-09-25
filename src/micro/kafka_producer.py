@@ -121,7 +121,7 @@ class KafkaProducer(metaclass=MetaSingleton):
         js["event"] = event
         # Создать идентификатор сообщения
         js["uuid"] = (
-            config.PRODUCER_ID + "-" + datetime.datetime.now().isoformat()
+            config.PRODUCER_ID + "-" + datetime.now().isoformat()
         )
         # Сформировать атрибут для цепочки сообщений
         if "chain_uuid" not in js:
