@@ -18,16 +18,16 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-async def send_manager(template: str, **kwarg) -> None:
+async def send_manager(template: str, data: dict) -> None:
     """Отправить сообщение менеджерам."""
-    message = await to_text(template=template, **kwarg)
+    message = await to_text(template=template, **data)
     await InfoEvent(text=message).send()
 
 
-async def send_client(template: str, debug: bool = False, **kwarg) -> None:
+async def send_client(template: str, data: dict, debug: bool = False) -> None:
     """Отправить сообщение клиенту."""
-    message = await to_text(template=template, **kwarg)
-    client_id = kwarg.get("client_id")
+    message = await to_text(template=template, **data)
+    client_id = data.get("client_id")
     if client_id:
         if debug:
             await InfoEvent(
@@ -57,14 +57,14 @@ def template_exists(template_name: str) -> bool:
 
 
 async def send_message(
-    funnel_name: str, stage: str, debug: bool = False, **kwarg
+    workflow: str, stage: str, data: dict, debug: bool = False
 ) -> None:
-    file_client = f"{funnel_name}/{stage}_client.txt".lower()
+    file_client = f"{workflow}/{stage}_client.txt".lower()
     if template_exists(file_client):
-        await send_client(template=file_client, debug=debug, **kwarg)
+        await send_client(template=file_client, data=data, debug=debug)
         logger.info(f"send file client: {file_client}")
 
-    file_manager = f"{funnel_name}/{stage}_manager.txt".lower()
+    file_manager = f"{workflow}/{stage}_manager.txt".lower()
     if template_exists(file_manager):
-        await send_manager(template=file_manager, **kwarg)
+        await send_manager(template=file_manager, data=data)
         logger.info(f"send file manager: {file_manager}")

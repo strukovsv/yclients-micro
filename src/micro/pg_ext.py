@@ -66,3 +66,7 @@ async def fetchall(query, params=None):
 
 async def fetchone(query, params=None):
     return await DB().fetchone(query, params)
+
+
+async def returning(query, params=None):
+    return await DB().returning(query, params)
