@@ -18,12 +18,12 @@ select name, template from templates c"""
         }
     )
     stages = []
-    if kwarg.get("workflow") and kwarg.get("workflow_id"):
+    if kwarg.get("workflow") and kwarg.get("ident_id"):
         stages = await select(
             "stages.sql",
             params={
                 "workflow": kwarg.get("workflow"),
-                "workflow_id": str(kwarg.get("workflow_id")),
+                "ident_id": str(kwarg.get("ident_id")),
             },
         )
 

@@ -71,7 +71,7 @@ class WorkflowBase(CronBaseClass):
                 "event": "StartWorkflow",
                 "id": "272696997::20250811",
                 "workflow": "ReactivationClient",
-                "workflow_id": 304734851,
+                "ident_id": 304734851,
                 "client_id": 272696997,
                 "client_name": "+79135602444 Дарья",
                 "last_training_date": datetime.date(2025, 8, 11),
@@ -100,7 +100,7 @@ class WorkflowBase(CronBaseClass):
 
     async def to_stage(
         self,
-        workflow_id: str,
+        ident_id: str,
         from_stage: str,
         stage: Optional[str] = None,
         delay: Optional[str | timedelta] = None,
@@ -139,14 +139,14 @@ class WorkflowBase(CronBaseClass):
                     UPDATE workflow_stages
                     SET executed_at = %(current_timestamp)s
                     WHERE workflow = %(workflow)s
-                      AND workflow_id = %(workflow_id)s
+                      AND ident_id = %(ident_id)s
                       AND executed_at IS NULL
                 """,
                 "params": {
                     # Получить имя воронки, процесса
                     "workflow": self.get_workflow(),
                     # Идентификатор, уникальность воронки
-                    "workflow_id": str(workflow_id),
+                    "ident_id": str(ident_id),
                     # Простамить текущее время
                     "current_timestamp": current_timestamp,
                 },
@@ -168,7 +168,7 @@ class WorkflowBase(CronBaseClass):
                     "sql": """
                         INSERT INTO workflow_stages (
                             workflow,
-                            workflow_id,
+                            ident_id,
                             from_stage,
                             stage,
                             created_at,
@@ -176,7 +176,7 @@ class WorkflowBase(CronBaseClass):
                             js
                         ) VALUES (
                             %(workflow)s,
-                            %(workflow_id)s,
+                            %(ident_id)s,
                             %(from_stage)s,
                             %(stage)s,
                             %(current_timestamp)s,
@@ -186,7 +186,7 @@ class WorkflowBase(CronBaseClass):
                     """,
                     "params": {
                         "workflow": self.get_workflow(),
-                        "workflow_id": str(workflow_id),
+                        "ident_id": str(ident_id),
                         "stage": stage,
                         "current_timestamp": current_timestamp,
                         "started_at": started_at,
@@ -204,7 +204,7 @@ class WorkflowBase(CronBaseClass):
         self,
         funnel_name: str,
         stages: dict,
-        workflow_id: str,
+        ident_id: str,
         debug: bool = False,
         **kwarg,
     ):
@@ -220,21 +220,21 @@ class WorkflowBase(CronBaseClass):
                 stage=stage_name,
                 debug=debug,
                 workflow=self.get_workflow(),
-                workflow_id=workflow_id,
+                ident_id=ident_id,
                 **kwarg,
             )
             # Если задан, то запустить следующий этап с задержкой
             if stage.get("next"):
                 await self.to_stage(
                     from_stage=stage_name,
-                    workflow_id=workflow_id,
+                    ident_id=ident_id,
                     stage=stage.get("next"),
                     delay=stage.get("delay"),
                 )
             else:
                 # Завершить задачу
                 await self.to_stage(
-                    from_stage=stage_name, workflow_id=workflow_id
+                    from_stage=stage_name, ident_id=ident_id
                 )
         else:
             logger.warning(
