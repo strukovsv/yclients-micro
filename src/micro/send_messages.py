@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 import os
 
 from micro.render_ext import to_text
+from micro.pg_ext import fetchall
 from micro.models.common_events import Report, InfoEvent
 
 
@@ -54,6 +55,37 @@ def template_exists(template_name: str) -> bool:
     return os.path.isfile(
         full_path
     )  # isfile — точнее, чем exists (не пропустит папки)
+
+
+async def send_stage_message(stage_id: int, debug: bool):
+    for stage in await fetchall(
+        """
+select
+  ws.*,
+  w.moment,
+  to_char(w.moment, 'DD.MM.YYYY HH24:MI:SS') start_date,
+  to_char(ws.executed_at, 'DD.MM.YYYY HH24:MI:SS') executed_date
+from workflow_stages ws
+join workflow w on w.id = ws.workflow_id
+where ws.id = %(id)s""",
+        {"id": stage_id},
+    ):
+        # Отправить сообщение клиенту и администратору
+        info = {
+            "workflow": stage.get("workflow"),
+            "capture_stage": stage.get("stage").lower(),
+            "data": stage.get("data"),
+            "start_date": stage.get("start_date"),
+            "executed_date": stage.get("executed_date"),
+        }
+        data = {**stage.get("js"), **{"info": info}}
+        logger.info(f"{data=}")
+        await send_message(
+            workflow=stage.get("workflow"),
+            stage=stage.get("stage"),
+            debug=debug,
+            data=data,
+        )
 
 
 async def send_message(

@@ -24,9 +24,9 @@ from micro.models.common_events import Report, InfoEvent
 from pydantic import Field
 
 from micro.models.header_event import HeaderEvent
-from micro.pg_ext import fetchone, execute, returning
+from micro.pg_ext import fetchone, execute, returning, select
 
-from micro.utils import str_to_timedelta
+from micro.utils import str_to_timedelta, parse_time_and_adjust
 from micro.send_messages import send_message
 
 # Настройка логгера
@@ -84,6 +84,8 @@ class Workflow(CronBaseClass):
     _workflow_id: Optional[int] = None
 
     _js: Optional[dict] = None
+
+    _stage: Optional[str] = None
 
     class Config:
         underscore_attrs_are_private = True
@@ -175,10 +177,11 @@ class Workflow(CronBaseClass):
 
         :return Optional[str]: _description_
         """
-        _ = self.data.get("stage")
-        if not _:
-            raise ValueError(f"Не задан stage в поле data: {self.data}")
-        return _
+        if not self._stage:
+            self._stage = self.data.get("stage")
+            if not self._stage:
+                raise ValueError(f"Не задан stage в поле data: {self.data}")
+        return self._stage
 
     @property
     def capture_stage(self) -> Optional[str]:
@@ -189,6 +192,9 @@ class Workflow(CronBaseClass):
         :return Optional[str]: _description_
         """
         return self.get_stage()
+
+    def set_capture_stage(self, value):
+        self._stage = value
 
     async def insert_into_workflow(self) -> int:
         """
@@ -242,12 +248,13 @@ WHERE event = %(event)s
                 )
         return delay_timedelta
 
-    async def update_sql(self):
+    async def update_sql(self, data: list):
         current_timestamp = datetime.now()
         return {
             "sql": """
                     UPDATE workflow_stages
-                    SET executed_at = %(current_timestamp)s
+                    SET executed_at = %(current_timestamp)s,
+                        data = %(data)s
                     WHERE event = %(event)s
                       AND workflow = %(workflow)s
                       AND ident_id = %(ident_id)s
@@ -261,19 +268,25 @@ WHERE event = %(event)s
                 "ident_id": self.ident_id,
                 # Простамить текущее время
                 "current_timestamp": current_timestamp,
+                # Сохранить результат выполнения stage
+                "data": json.dumps(data, ensure_ascii=True),
             },
         }
 
-    async def insert_sql(self, from_stage: str, to_stage: str, delay: str):
+    async def insert_sql(
+        self, from_stage: str, to_stage: str, delay: str, time_str: str
+    ):
         current_timestamp = datetime.now()
+        started_at = current_timestamp
         # Вычислить время запуска нового состояния
         # Преобразование строки в timedelta, если необходимо
-        delay_timedelta: Optional[timedelta] = self.delay2timedelta(delay)
-        started_at = (
-            current_timestamp + delay_timedelta
-            if delay_timedelta
-            else current_timestamp
-        )
+        if delay:
+            delay_timedelta: Optional[timedelta] = self.delay2timedelta(delay)
+            started_at = current_timestamp + delay_timedelta
+        if time_str:
+            started_at = parse_time_and_adjust(
+                base_datetime=started_at, time_str=time_str
+            )
         return {
             "sql": """
 INSERT INTO workflow_stages (
@@ -320,16 +333,18 @@ INSERT INTO workflow_stages (
 
     async def new_stage(
         self,
+        data: list,
         to_stage: Optional[str] = None,
         delay: Optional[str | timedelta] = None,
+        time_str: Optional[str] = None,
     ) -> None:
 
         logger.info(
-            f'Смена этапа "{self.capture_stage}" -> "{to_stage}", delay: "{delay}"'
+            f'Смена этапа "{self.capture_stage}" -> "{to_stage}", delay: "{delay} {time_str}"'
         )
 
         # SQL-операции: завершить текущий этап(ы)
-        sql_operations = [await self.update_sql()]
+        sql_operations = [await self.update_sql(data=data)]
 
         # Если stage не задан, то считаем, что только завершить текущий stage
         # Добавить в SQL создать новую задачу
@@ -339,12 +354,28 @@ INSERT INTO workflow_stages (
                     from_stage=self.capture_stage,
                     to_stage=to_stage,
                     delay=delay,
+                    time_str=time_str,
                 )
             ]
 
         # Выполняем все операции в одной транзакции
         await execute(query=sql_operations)
         logger.info(f"Этап workflow успешно обновлен: {to_stage or 'закрыт'}")
+
+    async def break_rules(self, conditions: list):
+        # Первое же удачное условие вызывает переход !!!
+        for condition in conditions:
+            logger.info(f"test condition: {condition}")
+            # Выполнить SQL запрос
+            data = await select(condition.get("file"), params=self.js)
+            if data and condition.get("then"):
+                self.set_capture_stage(condition.get("then"))
+                logger.info(f"goto {self.capture_stage}")
+                break
+            elif not data and condition.get("else"):
+                self.set_capture_stage(condition.get("else"))
+                logger.info(f"goto {self.capture_stage}")
+                break
 
     async def stage_worker(
         self,
@@ -361,12 +392,27 @@ INSERT INTO workflow_stages (
         # Получить флаг отладки workflow
         debug = rules.get("debug", False)
         if debug:
-            logger.info(f'Включен режим отладки для workflow "{self.workflow}"')
+            logger.info(
+                f'Включен режим отладки для workflow "{self.workflow}"'
+            )
+
+        # Правила прерывание workflow
+        if rules.get("break"):
+            await self.break_rules(rules.get("break"))
+
         # Получить задачи workflow
         stages = rules.get("stages", {})
         # Получить текущую задачу
         stage = stages.get(self.capture_stage)
         if stage:
+            # Выполнить SQL запрос
+            data = []
+            if stage.get("file"):
+                data = await select(
+                    stage.get("file"),
+                    params=self.js,
+                    template_path=f"templates/{self.workflow}",
+                )
             # Отправить сообщение клиенту и администратору
             info = {
                 "workflow_id": "#" + str(await self.workflow_id()),
@@ -374,6 +420,7 @@ INSERT INTO workflow_stages (
                 "capture_stage": self.capture_stage,
                 "desc": stage.get("desc", "-"),
                 "delay": stage.get("delay", "-"),
+                "data": data,
             }
             await send_message(
                 workflow=self.workflow,
@@ -386,10 +433,14 @@ INSERT INTO workflow_stages (
                 await self.new_stage(
                     to_stage=stage.get("next"),
                     delay=stage.get("delay"),
+                    time_str=stage.get("time"),
+                    data=data,
                 )
             else:
                 # Завершить задачу, есди не задана новая
-                await self.new_stage()
+                await self.new_stage(
+                    data=data,
+                )
         else:
             logger.warning(
                 f'Неизвестный этап "{self.capture_stage}" в workflow "{self.workflow}"'  # noqa

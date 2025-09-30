@@ -228,3 +228,118 @@ def str_to_timedelta(time_str: str) -> timedelta:
         total_seconds += num * multipliers[unit]
 
     return timedelta(seconds=total_seconds)
+
+
+# Сопоставление названий дней недели → ISO номер (1=пн, ..., 7=вс)
+# fmt: off
+WEEKDAY_ALIASES = {
+    # Английские
+    'mon': 1, 'monday': 1,
+    'tue': 2, 'tuesday': 2,
+    'wed': 3, 'wednesday': 3,
+    'thu': 4, 'thursday': 4,
+    'fri': 5, 'friday': 5,
+    'sat': 6, 'saturday': 6,
+    'sun': 7, 'sunday': 7,
+
+    # Русские
+    'пн': 1, 'понедельник': 1, 'пон': 1,
+    'вт': 2, 'вторник': 2,
+    'ср': 3, 'среда': 3, 'среду': 3, 'среды': 3,
+    'чт': 4, 'четверг': 4,
+    'пт': 5, 'пятница': 5, 'пятницу': 5, 'пятницы': 5,
+    'сб': 6, 'суббота': 6, 'субботу': 6, 'субботы': 6,
+    'вс': 7, 'воскресенье': 7, 'воскресенья': 7,
+}
+# fmt: on
+
+
+def parse_time_and_adjust(
+    base_datetime: datetime,
+    time_str: str,
+) -> datetime:
+    """
+    Парсит строку времени, которая может содержать или не содержать день недели.
+
+    Форматы:
+      - "HH:MM" или "HH:MM:SS" → без дня недели (сегодня/завтра)
+      - "<день_недели> HH:MM[:SS]" → с днём недели (ближайший подходящий день)
+
+    Поддерживает русские и английские названия дней недели (регистронезависимо).
+
+    Примеры:
+        "14:30"
+        "09:15:45"
+        "пн 14:30"
+        "воскресенье 09:15:45"
+        "Fri 18:00"
+
+    Результат всегда строго больше base_datetime.
+
+    :param time_str: входная строка
+    :param base_datetime: базовая дата для сравнения (по умолчанию — сейчас)
+    :return: datetime > base_datetime
+    """
+
+    time_str = time_str.strip()
+
+    # Попробуем сначала распарсить как "время без дня недели"
+    time_only_pattern = r"^\d{1,2}:\d{2}(?::\d{2})?$"
+    if re.fullmatch(time_only_pattern, time_str):
+        # Это просто время → поведение без дня недели
+        if ":" in time_str and time_str.count(":") == 2:
+            t = datetime.strptime(time_str, "%H:%M:%S").time()
+        else:
+            t = datetime.strptime(time_str, "%H:%M").time()
+
+        candidate = base_datetime.replace(
+            hour=t.hour, minute=t.minute, second=t.second, microsecond=0
+        )
+        if candidate <= base_datetime:
+            candidate += timedelta(days=1)
+        return candidate
+
+    # Иначе — пробуем формат "<день> время"
+    match = re.match(
+        r"^([а-яёa-z]+)\s+(\d{1,2}:\d{2}(?::\d{2})?)$", time_str, re.IGNORECASE
+    )
+
+    if not match:
+        raise ValueError(
+            f"Неверный формат строки. Допустимые варианты:\n"
+            f"  - 'HH:MM' или 'HH:MM:SS'\n"
+            f"  - '<день_недели> HH:MM[:SS]'\n"
+            f"Примеры: '14:30', 'пн 09:15', 'sunday 23:59:59'\n"
+            f"Получено: {time_str!r}"
+        )
+
+    day_name, time_part = match.groups()
+    day_key = day_name.lower()
+
+    if day_key not in WEEKDAY_ALIASES:
+        known = ", ".join(sorted(set(WEEKDAY_ALIASES.keys())))
+        raise ValueError(
+            f"Неизвестный день недели: {day_name!r}. "
+            f"Поддерживаются: {known}"
+        )
+
+    iso_target = WEEKDAY_ALIASES[day_key]
+
+    # Парсинг времени
+    if time_part.count(":") == 2:
+        t = datetime.strptime(time_part, "%H:%M:%S").time()
+    else:
+        t = datetime.strptime(time_part, "%H:%M").time()
+
+    # Найти ближайшую дату с этим днём недели
+    current_iso = base_datetime.isoweekday()
+    days_ahead = iso_target - current_iso
+    if days_ahead < 0:
+        days_ahead += 7
+    candidate_date = base_datetime.date() + timedelta(days=days_ahead)
+    candidate = datetime.combine(candidate_date, t)
+
+    if candidate <= base_datetime:
+        candidate += timedelta(weeks=1)
+
+    return candidate
