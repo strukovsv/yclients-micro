@@ -484,3 +484,52 @@ class ScheduleReport(CronBaseClass):
 
 # class FirstClientVisit(WorkflowBase):
 #     """Отправить сообщение клиенту о первой тренировке"""
+
+
+class OpenWorkflow(CronBaseClass):
+    """
+    Запустить workflow, cron обработчиком
+    исходные данные лежат в поле дата
+    """
+
+    pass
+
+
+class CloseWorkflow(HeaderEvent):
+    """Закрыть заданный workflow"""
+
+    workflow_id: int | None = Field(
+        None, description="Идентификатор workflow"
+    )  # noqa
+
+
+class CreateStage(HeaderEvent):
+    """Создать задачу в workflow"""
+
+    workflow_id: int | None = Field(
+        None, description="Идентификатор workflow"
+    )  # noqa
+    stage_name: str | None = Field(
+        None, description="Наименование stage задачи"
+    )  # noqa
+    stage_id: int | None = Field(
+        None,
+        description="Идентификатор текущей задачи, которая запустила новую",
+    )  # noqa
+
+
+class StartStage(CronBaseClass):
+    """Выполнить задачу, cron обработчиком
+    исходные данные лежат в поле дата
+    """
+
+    pass
+
+
+class CheckWorkflow(CronBaseClass):
+    """Проверить workflow
+    Выполнить проверку и сделать переход на определенный stage
+    исходные данные лежат в поле дата
+    """
+
+    pass

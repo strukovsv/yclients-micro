@@ -80,7 +80,11 @@ class DB(metaclass=MetaSingleton):
         await self.open_pool()
         async with self.pool.connection() as conn:
             async with conn.cursor() as acur:
-                await acur.execute(query, params)
+                try:
+                    await acur.execute(query, params)
+                except Exception as e:
+                    logger.error(f'{e}: {query=} {params=}')
+                    raise
                 PG_FETCHALL_CNT.inc()
                 return await acur.fetchall()
 

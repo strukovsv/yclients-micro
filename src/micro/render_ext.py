@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 async def to_text(template: str, **kwarg) -> str:
+
     consts = hide_passwords(
         {
             row["name"]: row["template"]
@@ -17,15 +18,16 @@ select name, template from templates c"""
             )
         }
     )
-    stages = []
-    if kwarg.get("workflow") and kwarg.get("ident_id"):
-        stages = await select(
+
+    stage = {}
+    if kwarg.get("stage_id"):
+        for row in await select(
             "stages.sql",
             params={
-                "workflow": kwarg.get("workflow"),
-                "ident_id": str(kwarg.get("ident_id")),
+                "stage_id": kwarg.get("stage_id"),
             },
-        )
+        ):
+            stage = row
 
     client = {}
     if kwarg.get("client_id"):
@@ -33,12 +35,13 @@ select name, template from templates c"""
             "client-info.sql", params={"id": kwarg.get("client_id")}
         ):
             client = row
+
     result = mask_phone_recursive(
         {
             **kwarg,
             **{"client": client},
             **{"const": consts},
-            **{"stages": stages},
+            **{"stage": stage},
         }
     )
     # logger.info(f"{result=}")
