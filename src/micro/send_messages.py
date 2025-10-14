@@ -22,6 +22,14 @@ logger = logging.getLogger(__name__)
 async def send_manager(template: str, data: dict) -> None:
     """Отправить сообщение менеджерам."""
     message = await to_text(template=template, **data)
+    await InfoEvent(text=message, acc="manager").send()
+    # Продублируем пока сообщение администраторам
+    await InfoEvent(text=message).send()
+
+
+async def send_admin(template: str, data: dict) -> None:
+    """Отправить сообщение менеджерам."""
+    message = await to_text(template=template, **data)
     await InfoEvent(text=message).send()
 
 
@@ -100,3 +108,8 @@ async def send_message(
     if template_exists(file_manager):
         await send_manager(template=file_manager, data=data)
         logger.info(f"send file manager: {file_manager}")
+
+    file_admin = f"{workflow}/{stage}_admin.txt".lower()
+    if template_exists(file_admin):
+        await send_admin(template=file_admin, data=data)
+        logger.info(f"send file admin: {file_admin}")
