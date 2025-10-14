@@ -34,8 +34,7 @@ SELECT
     to_date2year(r.js ->> 'date'::text) AS record_dt_year,
     (r.js->'client'->>'id')::int AS client_id
 FROM records r
-WHERE (r.js->>'paid_full')::int = 0
-    AND COALESCE(r.js->>'deleted', 'false') <> 'true'
+WHERE COALESCE(r.js->>'deleted', 'false') <> 'true'
 """,
 
     "template_active_cards.sql": """
