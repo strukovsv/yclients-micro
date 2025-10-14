@@ -75,7 +75,7 @@ select
   to_char(max((ac.js->>'expiration_date')::date), 'YYYY-MM') as "Окончание абонементов, месяц",
   sum(ac.costs) as "Сумма продажи, руб",
   count(*) as "Активных абонементов, клв"
-from active_cards ac join detail_clients cl on cl.id = ac.client_id
+from active_cards ac join detail_clients2 cl on cl.id = ac.client_id
 group by cl.id
 """,
 
@@ -94,8 +94,11 @@ select
     cl.js->>'phone',
     ' ',
     cl.js->>'display_name'
-  ) as "Клиент, unmasked"
-from detail_clients cl""",
+  ) as "Клиент, unmasked",
+  round(cast(cl.js->>'sold_amount' as decimal)) as "Сумма по клиенту, руб",
+  round(cast(cl.js->>'visits' as decimal)) as "Визитов клиента, раз"
+from detail_clients2 cl""",
+
     "template_workflow2.sql": """
 select
   w.name "Воронка",
