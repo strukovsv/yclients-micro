@@ -1,22 +1,22 @@
 constant_templates = {
 
-    "YOGA_SERVICES": """
+    "yoga_services.sql": """
 select
   s.id service_id,
   s.js->>'title' AS service_title
 from services s
 where s.js->>'title' ~* 'ЙОГА|СПИНА|ГАМАК|ИНДИВИДУАЛЬНОЕ ЗАНЯТИЕ'""",
 
-    "YOGA": """
+    "yoga.sql": """
 with
     yoga_services as (
-        {% include 'YOGA_SERVICES' %}
+        {% include 'yoga_services.sql' %}
 )
 SELECT
     r.id as record_id,
     to_date2(r.js ->> 'date'::text) AS record_dt,
-    to_char(to_date2(r.js ->> 'date'::text), 'YYYY-MM') AS record_dt_month,
-    to_char(to_date2(r.js ->> 'date'::text), 'YYYY-MM') AS record_dt_year,
+    to_date2month(r.js ->> 'date'::text) AS record_dt_month,
+    to_date2year(r.js ->> 'date'::text) AS record_dt_year,
     (r.js->'client'->>'id')::int AS client_id,
     s.service_id AS service_id,
     s.service_title AS service_title
