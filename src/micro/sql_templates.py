@@ -1,16 +1,16 @@
 constant_templates = {
 
-    "yoga_services.sql": """
+    "template_yoga_services.sql": """
 select
   s.id service_id,
   s.js->>'title' AS service_title
 from services s
 where s.js->>'title' ~* 'ЙОГА|СПИНА|ГАМАК|ИНДИВИДУАЛЬНОЕ ЗАНЯТИЕ'""",
 
-    "yoga.sql": """
+    "template_yoga.sql": """
 with
     yoga_services as (
-        {% include 'yoga_services.sql' %}
+        {% include 'template_yoga_services.sql' %}
 )
 SELECT
     r.id as record_id,
@@ -24,6 +24,19 @@ FROM records r
 JOIN yoga_services s ON s.service_id = (r.js->'services'->0->>'id')::int
 WHERE (r.js->>'paid_full')::int = 1
     AND COALESCE(r.js->>'deleted', 'false') <> 'true'
+""",
+
+    "template_records.sql": """
+SELECT
+    r.id as record_id,
+    to_date2(r.js ->> 'date'::text) AS record_dt,
+    to_date2month(r.js ->> 'date'::text) AS record_dt_month,
+    to_date2year(r.js ->> 'date'::text) AS record_dt_year,
+    (r.js->'client'->>'id')::int AS client_id
+FROM records r
+WHERE (r.js->>'paid_full')::int = 0
+    AND COALESCE(r.js->>'deleted', 'false') <> 'true'
+    AND to_date2(r.js ->> 'date'::text) > current_date
 """,
 
     "template_active_cards.sql": """
