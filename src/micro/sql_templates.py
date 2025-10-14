@@ -95,7 +95,7 @@ select
     ' ',
     cl.js->>'display_name'
   ) as "Клиент, unmasked",
-  round(cast(cl.js->>'sold_amount' as decimal)) as "Сумма по клиенту, руб",
+  round(cast(cl.js->>'paid' as decimal)) as "Сумма по клиенту, руб",
   round(cast(cl.js->>'visits' as decimal)) as "Визитов клиента, раз"
 from detail_clients2 cl""",
 
