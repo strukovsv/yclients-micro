@@ -36,7 +36,6 @@ SELECT
 FROM records r
 WHERE (r.js->>'paid_full')::int = 0
     AND COALESCE(r.js->>'deleted', 'false') <> 'true'
-    AND to_date2(r.js ->> 'date'::text) > current_date
 """,
 
     "template_active_cards.sql": """
