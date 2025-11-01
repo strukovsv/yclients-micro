@@ -47,8 +47,14 @@ class InfoEvent(HeaderEvent):
         ...,
         description="Текст информационного сообщения, строка или массив строк",
     )  # noqa
-    format: str | None = Field(None, description="Формат сообщения. Markdown (по умолчанию) или html", )  # noqa
-    acc: str | None = Field(None, description="Отправить системное сообщение клиентам с заданным доступом", )  # noqa
+    format: str | None = Field(
+        None,
+        description="Формат сообщения. Markdown (по умолчанию) или html",
+    )  # noqa
+    acc: str | None = Field(
+        None,
+        description="Отправить системное сообщение клиентам с заданным доступом",
+    )  # noqa
 
 
 class ErrorEvent(HeaderEvent):
@@ -63,3 +69,9 @@ class Live(HeaderEvent):
     """Отправить сервисам запрос ответить жив он"""
 
     pass
+
+
+class Webhook(HeaderEvent):
+    """Входящие, перехваченное сообщение от клиента"""
+
+    body: dict = Field(..., description="Перехваченное сообщение")  # noqa
