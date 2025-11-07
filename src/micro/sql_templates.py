@@ -65,16 +65,16 @@ select
 	  '...',
 	  to_char((ac.js->>'expiration_date')::date, 'DD.MM.YY')),
 	  ')'),
-	', ') "🎫 Активные абонементы",
-  sum((ac.js->>'united_balance_services_count')::int) as "🎫 Занятий по абонементам, клв",
-  min((ac.js->>'created_date')::date) as "🎫 Покупка абонементов, дата",
-  to_char(min((ac.js->>'created_date')::date), 'YYYY-MM') as "🎫 Покупка абонементов, месяц",
-  min((ac.js->>'activated_date')::date) as "🎫 Активация абонементов, дата",
-  to_char(min((ac.js->>'activated_date')::date), 'YYYY-MM') as "🎫 Активация абонементов, месяц",
-  max((ac.js->>'expiration_date')::date) as "🎫 Окончание абонементов, дата",
-  to_char(max((ac.js->>'expiration_date')::date), 'YYYY-MM') as "🎫 Окончание абонементов, месяц",
-  sum(ac.costs) as "🎫 Сумма продажи, руб",
-  count(*) as "🎫 Активных абонементов, клв"
+	', ') "[card] Активные абонементы",
+  sum((ac.js->>'united_balance_services_count')::int) as "[card] Занятий по абонементам, клв",
+  min((ac.js->>'created_date')::date) as "[card] Покупка абонементов, дата",
+  to_char(min((ac.js->>'created_date')::date), 'YYYY-MM') as "[card] Покупка абонементов, месяц",
+  min((ac.js->>'activated_date')::date) as "[card] Активация абонементов, дата",
+  to_char(min((ac.js->>'activated_date')::date), 'YYYY-MM') as "[card] Активация абонементов, месяц",
+  max((ac.js->>'expiration_date')::date) as "[card] Окончание абонементов, дата",
+  to_char(max((ac.js->>'expiration_date')::date), 'YYYY-MM') as "[card] Окончание абонементов, месяц",
+  sum(ac.costs) as "[card] Сумма продажи, руб",
+  count(*) as "[card] Активных абонементов, клв"
 from active_cards ac join detail_clients2 cl on cl.id = ac.client_id
 group by cl.id
 """,
@@ -89,40 +89,40 @@ select
     end,
     ' ',
     cl.js->>'display_name'
-  ) as "👩‍🦳 Клиент",
+  ) as "[client]‍🦳 Клиент",
   concat(
     cl.js->>'phone',
     ' ',
     cl.js->>'display_name'
-  ) as "👩‍🦳 Клиент, unmasked",
-  round(cast(cl.js->>'paid' as decimal)) as "👩‍🦳 Сумма по клиенту, руб",
-  round(cast(cl.js->>'visits' as decimal)) as "👩‍🦳 Визитов клиента, раз"
+  ) as "[client]‍🦳 Клиент, unmasked",
+  round(cast(cl.js->>'paid' as decimal)) as "[client]‍🦳 Сумма по клиенту, руб",
+  round(cast(cl.js->>'visits' as decimal)) as "[client]‍🦳 Визитов клиента, раз"
 from detail_clients2 cl""",
 
     "template_workflow2.sql": """
 select
-  w.name "☎ Воронка",
-  w.opened_at::date as "☎ Создана воронка, дата",
-  to_char(w.opened_at::date, 'YYYY-MM') as "☎ Создана воронка, месяц",
-  to_char(w.opened_at::date, 'YYYY') as "☎ Создана воронка, год",
+  w.name "[workflow] Воронка",
+  w.opened_at::date as "[workflow] Создана воронка, дата",
+  to_char(w.opened_at::date, 'YYYY-MM') as "[workflow] Создана воронка, месяц",
+  to_char(w.opened_at::date, 'YYYY') as "[workflow] Создана воронка, год",
   case
     when w.closed_at::date is null
 	then 'Open'
 	else 'Close'
-  end "☎ Статус воронки",
-  w.closed_at::date as "☎ Воронка завершена, дата",
-  to_char(w.closed_at::date, 'YYYY-MM') as "☎ Воронка завершена, месяц",
-  to_char(w.closed_at::date, 'YYYY') as "☎ Воронка завершена, год",
+  end "[workflow] Статус воронки",
+  w.closed_at::date as "[workflow] Воронка завершена, дата",
+  to_char(w.closed_at::date, 'YYYY-MM') as "[workflow] Воронка завершена, месяц",
+  to_char(w.closed_at::date, 'YYYY') as "[workflow] Воронка завершена, год",
   (w.data->>'client_id')::int client_id,
-  --dc.js->>'display_name' as "☎ Клиент",
-  --dc.js->>'phone' as "☎ Телефон",
-  ws.stage_name as "☎ Задача",
-  ws.created_at::date as "☎ Открыта задача, дата",
-  to_char(ws.created_at::date, 'YYYY-MM') as "☎ Открыта задача, месяц",
-  to_char(ws.created_at::date, 'YYYY') as "☎ Открыта задача, год",
-  to_char(ws.started_at::timestamp, 'DD.MM.YYYY HH24:MI:SS') as "☎ Запустить задачу в",
-  EXTRACT(DAY FROM (coalesce(w.closed_at::timestamp, current_timestamp) - (w.opened_at::timestamp))) as "☎ Длительность, дней",
-  to_char((w.closed_at::timestamp) - (w.opened_at::timestamp), 'FMDD "дней" HH24:MI:SS') "☎ Длительность"
+  --dc.js->>'display_name' as "[workflow] Клиент",
+  --dc.js->>'phone' as "[workflow] Телефон",
+  ws.stage_name as "[workflow] Задача",
+  ws.created_at::date as "[workflow] Открыта задача, дата",
+  to_char(ws.created_at::date, 'YYYY-MM') as "[workflow] Открыта задача, месяц",
+  to_char(ws.created_at::date, 'YYYY') as "[workflow] Открыта задача, год",
+  to_char(ws.started_at::timestamp, 'DD.MM.YYYY HH24:MI:SS') as "[workflow] Запустить задачу в",
+  EXTRACT(DAY FROM (coalesce(w.closed_at::timestamp, current_timestamp) - (w.opened_at::timestamp))) as "[workflow] Длительность, дней",
+  to_char((w.closed_at::timestamp) - (w.opened_at::timestamp), 'FMDD "дней" HH24:MI:SS') "[workflow] Длительность"
 from workflow2 w
 , workflow_stages2 ws
 , detail_clients2 dc
