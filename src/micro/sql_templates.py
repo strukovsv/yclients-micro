@@ -89,14 +89,14 @@ select
     end,
     ' ',
     cl.js->>'display_name'
-  ) as "[client]‍🦳 Клиент",
+  ) as "[client] Клиент",
   concat(
     cl.js->>'phone',
     ' ',
     cl.js->>'display_name'
-  ) as "[client]‍🦳 Клиент, unmasked",
-  round(cast(cl.js->>'paid' as decimal)) as "[client]‍🦳 Сумма по клиенту, руб",
-  round(cast(cl.js->>'visits' as decimal)) as "[client]‍🦳 Визитов клиента, раз"
+  ) as "[client] Клиент, unmasked",
+  round(cast(cl.js->>'paid' as decimal)) as "[client] Сумма по клиенту, руб",
+  round(cast(cl.js->>'visits' as decimal)) as "[client] Визитов клиента, раз"
 from detail_clients2 cl""",
 
     "template_workflow2.sql": """
