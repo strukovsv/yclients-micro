@@ -1,7 +1,6 @@
 import inspect
 import logging
 import sys
-import json
 
 try:
     from schema_registry.client import AsyncSchemaRegistryClient, schema
@@ -14,18 +13,19 @@ from micro.singleton import MetaSingleton
 
 import micro.config as config
 
-import micro.models.api_records
-import micro.models.sync_events
-import micro.models.system_events
-import micro.models.bot_events
-import micro.models.common_events
-import micro.models.payment_events
-import micro.models.timetable_events
-import micro.models.client_events
-import micro.models.cards_events
-import micro.models.cron_events
-import micro.models.buh_events
-import micro.models.mail_events
+import micro.models.api_records # noqa
+import micro.models.sync_events # noqa
+import micro.models.system_events # noqa
+import micro.models.bot_events # noqa
+import micro.models.common_events # noqa
+import micro.models.payment_events # noqa
+import micro.models.timetable_events # noqa
+import micro.models.client_events # noqa
+import micro.models.cards_events # noqa
+import micro.models.cron_events # noqa
+import micro.models.buh_events # noqa
+import micro.models.mail_events # noqa
+import micro.models.chat_events # noqa
 
 
 logger = logging.getLogger(__name__)
