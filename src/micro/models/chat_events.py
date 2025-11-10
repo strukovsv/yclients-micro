@@ -28,7 +28,7 @@ class OutputChatEvent(HeaderEvent):
     phone: str = Field(..., description="Телефон",)  # noqa
     display_name: str = Field(..., description="Наименование клиента",)  # noqa
     chat_id: str = Field(..., description="Идентификатор в телеграме",)  # noqa
-    first_name: str = Field(..., description="Имя администратора в телеграме",)  # noqa
-    last_name: str = Field(..., description="Фамилия администратора в телеграме",)  # noqa
-    username: str = Field(..., description="Ник администратора в телеграме",)  # noqa
+    first_name: str | None = Field(None, description="Имя администратора в телеграме",)  # noqa
+    last_name: str | None = Field(None, description="Фамилия администратора в телеграме",)  # noqa
+    username: str | None = Field(None, description="Ник администратора в телеграме",)  # noqa
     # fmt: on
