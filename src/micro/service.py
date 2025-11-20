@@ -32,6 +32,7 @@ app = None
 sentry_sdk.init(
     server_name=os.environ.get("SENTRY_SERVER", None),
     max_breadcrumbs=10,
+    default_integrations=False,
 )
 
 

@@ -530,6 +530,16 @@ class Yclients(metaclass=MetaSingleton):
         )
         return rows
 
+    async def get_goods(self):
+        rows = await self.load_object(
+            obj_name="goods",
+            url=f"goods/{self.company_id}",
+            method="get",
+            params={},
+        )
+        logger.debug(f"get_goods, rows: {len(rows)}")
+        return rows
+
     async def send_message(self, message, client_ids: list):
         """Отправить сообщение средствами yclients"""
         # Установлена переменная тестовой отправки только этому клиенту
