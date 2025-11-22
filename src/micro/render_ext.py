@@ -1,5 +1,8 @@
 import logging
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 import micro.render as render
 from micro.pg_ext import fetchone, fetchall, select
 from micro.utils import hide_passwords, mask_phone_recursive
@@ -42,6 +45,7 @@ select name, template from templates c"""
             **{"client": client},
             **{"const": consts},
             **{"stage": stage},
+            **{"now": datetime.now(ZoneInfo("Asia/Krasnoyarsk"))},
         }
     )
     # logger.info(f"{result=}")
