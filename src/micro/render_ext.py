@@ -39,13 +39,15 @@ select name, template from templates c"""
         ):
             client = row
 
+    now = datetime.now(ZoneInfo("Asia/Krasnoyarsk"))
+    now_as_string = now.strftime("%A, %d.%m.%Y %H:%M")
     result = mask_phone_recursive(
         {
             **kwarg,
             **{"client": client},
             **{"const": consts},
             **{"stage": stage},
-            **{"now": datetime.now(ZoneInfo("Asia/Krasnoyarsk"))},
+            **{"now": f"{now_as_string}"},
         }
     )
     # logger.info(f"{result=}")
