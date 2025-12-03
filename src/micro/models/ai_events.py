@@ -34,6 +34,22 @@ class AiResponse(AiEvent):
     # fmt: on
 
 
+class AiAnswer(AiEvent):
+    """AI ответил клиенту"""
+
+    # fmt: off
+    output: dict = Field(..., description="Исходящее объект", )  # noqa
+    # fmt: on
+
+
+class AiHelp(AiEvent):
+    """AI проист помощи у администратора"""
+
+    # fmt: off
+    output: dict = Field(..., description="Исходящее объект", )  # noqa
+    # fmt: on
+
+
 class SignUpActivity(AiEvent):
     """Записаться на занятие"""
 
@@ -60,7 +76,8 @@ class WillBeAbsent(AiEvent):
     )
     absence_end: datetime | None = Field(
         default=None, description="Дата окончания периода отсутствия клиента"
-    )    # fmt: on
+    )
+    # fmt: on
 
 
 class AddClientToBlacklist(AiEvent):
@@ -73,4 +90,5 @@ class AddClientToBlacklist(AiEvent):
     )
     blacklist_stop: datetime | None = Field(
         default=None, description="Дата окончания периода отсутствия клиента"
-    )    # fmt: on
+    )
+    # fmt: on

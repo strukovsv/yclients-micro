@@ -78,3 +78,33 @@ async def fetchone(query, params=None):
 
 async def returning(query, params=None):
     return await DB().returning(query, params)
+
+
+async def client2brief(client_id: int) -> str:
+    """Клиент в номер телефона и имя, шифровано"""
+    info = await DB().fetchone("""
+select
+    concat(
+    case
+        when length(cl.js->>'phone') = 12
+    then left(cl.js->>'phone', 5) || '•••' || right(cl.js->>'phone', 4)
+        else cl.js->>'phone'
+    end,
+    ' ',
+    cl.js->>'display_name') as info
+from detail_clients cl
+where cl.id = %(client_id)s""", {"client_id": client_id})
+    return info.get("info") if info else None
+
+
+async def client2full(client_id: int) -> str:
+    """Клиент в номер телефона и имя, не шифровано"""
+    info = await DB().fetchone("""
+select
+    concat(
+    cl.js->>'phone',
+    ' ',
+    cl.js->>'display_name') as info
+from detail_clients cl
+where cl.id = %(client_id)s""", {"client_id": client_id})
+    return info.get("info") if info else None

@@ -45,6 +45,9 @@ class SaveMessageEvent(HeaderEvent):
     role: str | None = Field(None, description="Роль по умолчанию, если не задана, то отправил сервис") # noqa
     # fmt: on
 
+    def route_key(self):
+        return self.client_id
+
 
 class ServiceStarted(HeaderEvent):
     """Сообщение о запуске сервиса"""
@@ -100,3 +103,6 @@ class Webhook(HeaderEvent):
     """Входящие, перехваченное сообщение от клиента"""
 
     body: dict = Field(..., description="Перехваченное сообщение")  # noqa
+
+    def route_key(self):
+        return self.body.get("data", {}).get("id")

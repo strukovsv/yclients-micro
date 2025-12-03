@@ -18,6 +18,17 @@ class InputChatEvent(HeaderEvent):
     # fmt: on
 
 
+class InputCommandEvent(HeaderEvent):
+    """Входящее, перехваченное, сообщение от клиента, команда"""
+
+    # fmt: off
+    text: str = Field(..., description="Входящее сообщение", )  # noqa
+    client_id: int = Field(..., description="Идентификатор клиента",)  # noqa
+    phone: str = Field(..., description="Телефон",)  # noqa
+    display_name: str = Field(..., description="Наименование клиента",)  # noqa
+    # fmt: on
+
+
 class ClientChatEvent(HeaderEvent):
     """Входящее, перехваченное, сообщение от клиента"""
 
@@ -38,6 +49,9 @@ class YclientChatEvent(HeaderEvent):
     phone: str = Field(..., description="Телефон",)  # noqa
     display_name: str = Field(..., description="Наименование клиента",)  # noqa
     # fmt: on
+
+    def route_key(self):
+        return self.client_id
 
 
 class OutputChatEvent(HeaderEvent):

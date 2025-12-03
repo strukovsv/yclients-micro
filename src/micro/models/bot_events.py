@@ -7,6 +7,7 @@ from pydantic_avro.base import AvroBase
 from pydantic import Field, BaseModel
 
 import micro.pg_ext as base
+import micro.config as config
 
 from micro.models.header_event import HeaderEvent
 
@@ -41,7 +42,6 @@ class TelegramUser(BaseModel):
     access: list | None = []  # noqa
 
     def __init__(self, **kwarg):
-        logger.info(f"{kwarg}")
         super().__init__(
             id=str(kwarg["id"]),
             first_name=kwarg["first_name"],
@@ -111,7 +111,7 @@ class TelegramUser(BaseModel):
     from passwd p
     where concat(',', lower(replace(p.access, ' ', '')), ',') like '%,{access.strip().lower()},%'""",
         )
-        logger.info(f'get_chat_id_for_access: {result=}')
+        logger.info(f"get_chat_id_for_access: {result=}")
         return [int(user["telegram_id"]) for user in result]
 
 
@@ -119,9 +119,13 @@ class BotBaseClass(HeaderEvent):
     """Базовое сообщение для бота"""
 
     chat_id: str
+    bot: str = config.TELEGRAM_BOT
 
     def route_key(self):
-        return self.chat_id
+        return f"{self.bot}:{self.chat_id}"
+
+    def is_this_bot(self):
+        return self.bot and self.bot == config.TELEGRAM_BOT
 
 
 class BotEnteredClass(BotBaseClass):
@@ -236,9 +240,13 @@ class BotSendBase(HeaderEvent):
     history: list | None = Field(
         None, description="История отправленных сообщений в диалоге"
     )  # noqa
+    bot: str = config.TELEGRAM_BOT
 
     def route_key(self):
-        return self.chat_id
+        return f"{self.bot}:{self.chat_id}"
+
+    def is_this_bot(self):
+        return self.bot and self.bot == config.TELEGRAM_BOT
 
     def add(self, stage: str = "stage", data: any = None):
         """Добавить в историю сообщение"""
