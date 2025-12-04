@@ -105,4 +105,8 @@ class Webhook(HeaderEvent):
     body: dict = Field(..., description="Перехваченное сообщение")  # noqa
 
     def route_key(self):
-        return self.body.get("data", {}).get("id")
+        key = self.body.get("data", {}).get("contact", {}).get("phone")
+        if not key:
+            for data in self.body.get("data", {}).get("docs", []):
+                key = data.get("data", {}).get("phone")
+        return f'{self.body.get("type")}::{key}'

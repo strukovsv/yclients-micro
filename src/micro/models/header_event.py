@@ -44,7 +44,12 @@ class HeaderEvent(AvroBase):
     # fmt: on
 
     def route_key(self):
-        return self.addresse.chat_id or self.addresse.client_id or "na"
+        return (
+            self.addresse.chat_id
+            or self.addresse.client_id
+            or config.PRODUCER_ID
+            or "na"
+        )
 
     async def deserialization(self):
         """Абстрактный метод десереализации"""

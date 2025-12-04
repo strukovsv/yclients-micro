@@ -7,60 +7,62 @@ from pydantic import Field
 from micro.models.header_event import HeaderEvent
 
 
-class InputChatEvent(HeaderEvent):
-    """Входящее, перехваченное, сообщение от клиента"""
-
-    # fmt: off
-    text: str = Field(..., description="Входящее сообщение", )  # noqa
-    client_id: int = Field(..., description="Идентификатор клиента",)  # noqa
-    phone: str = Field(..., description="Телефон",)  # noqa
-    display_name: str = Field(..., description="Наименование клиента",)  # noqa
-    # fmt: on
-
-
-class InputCommandEvent(HeaderEvent):
-    """Входящее, перехваченное, сообщение от клиента, команда"""
-
-    # fmt: off
-    text: str = Field(..., description="Входящее сообщение", )  # noqa
-    client_id: int = Field(..., description="Идентификатор клиента",)  # noqa
-    phone: str = Field(..., description="Телефон",)  # noqa
-    display_name: str = Field(..., description="Наименование клиента",)  # noqa
-    # fmt: on
-
-
-class ClientChatEvent(HeaderEvent):
-    """Входящее, перехваченное, сообщение от клиента"""
-
-    # fmt: off
-    text: str = Field(..., description="Входящее сообщение", )  # noqa
-    client_id: int = Field(..., description="Идентификатор клиента",)  # noqa
-    phone: str = Field(..., description="Телефон",)  # noqa
-    display_name: str = Field(..., description="Наименование клиента",)  # noqa
-    # fmt: on
-
-
-class YclientChatEvent(HeaderEvent):
-    """Входящее, перехваченное, сообщение от клиента"""
-
-    # fmt: off
-    text: str = Field(..., description="Входящее сообщение", )  # noqa
-    client_id: int = Field(..., description="Идентификатор клиента",)  # noqa
-    phone: str = Field(..., description="Телефон",)  # noqa
-    display_name: str = Field(..., description="Наименование клиента",)  # noqa
-    # fmt: on
+class BaseChatEvent(HeaderEvent):
+    client_id: int = Field(
+        ...,
+        description="Идентификатор клиента",
+    )  # noqa
 
     def route_key(self):
         return self.client_id
 
 
-class OutputChatEvent(HeaderEvent):
+class InputChatEvent(BaseChatEvent):
+    """Входящее, перехваченное, сообщение от клиента"""
+
+    # fmt: off
+    text: str = Field(..., description="Входящее сообщение", )  # noqa
+    phone: str = Field(..., description="Телефон",)  # noqa
+    display_name: str = Field(..., description="Наименование клиента",)  # noqa
+    # fmt: on
+
+
+class InputCommandEvent(BaseChatEvent):
+    """Входящее, перехваченное, сообщение от клиента, команда"""
+
+    # fmt: off
+    text: str = Field(..., description="Входящее сообщение", )  # noqa
+    phone: str = Field(..., description="Телефон",)  # noqa
+    display_name: str = Field(..., description="Наименование клиента",)  # noqa
+    # fmt: on
+
+
+class ClientChatEvent(BaseChatEvent):
+    """Входящее, перехваченное, сообщение от клиента"""
+
+    # fmt: off
+    text: str = Field(..., description="Входящее сообщение", )  # noqa
+    phone: str = Field(..., description="Телефон",)  # noqa
+    display_name: str = Field(..., description="Наименование клиента",)  # noqa
+    # fmt: on
+
+
+class YclientChatEvent(BaseChatEvent):
+    """Входящее, перехваченное, сообщение от клиента"""
+
+    # fmt: off
+    text: str = Field(..., description="Входящее сообщение", )  # noqa
+    phone: str = Field(..., description="Телефон",)  # noqa
+    display_name: str = Field(..., description="Наименование клиента",)  # noqa
+    # fmt: on
+
+
+class OutputChatEvent(BaseChatEvent):
     """Ответное сообщение клиенту"""
 
     # fmt: off
     text: str = Field(..., description="Ответное сообщение", )  # noqa
     reply_text: str = Field(..., description="Исходное сообщение", )  # noqa
-    client_id: int = Field(..., description="Идентификатор клиента",)  # noqa
     phone: str = Field(..., description="Телефон",)  # noqa
     display_name: str = Field(..., description="Наименование клиента",)  # noqa
     chat_id: str = Field(..., description="Идентификатор в телеграме",)  # noqa
@@ -70,13 +72,12 @@ class OutputChatEvent(HeaderEvent):
     # fmt: on
 
 
-class AiChatEvent(HeaderEvent):
+class AiChatEvent(BaseChatEvent):
     """Ответное сообщение клиенту от Ai"""
 
     # fmt: off
     text: str = Field(..., description="Ответное сообщение", )  # noqa
     reply_text: str = Field(..., description="Исходное сообщение", )  # noqa
-    client_id: int = Field(..., description="Идентификатор клиента",)  # noqa
     phone: str = Field(..., description="Телефон",)  # noqa
     display_name: str = Field(..., description="Наименование клиента",)  # noqa
     context: str = Field(..., description="Контекст сообщения",)  # noqa
