@@ -343,3 +343,24 @@ def parse_time_and_adjust(
         candidate += timedelta(weeks=1)
 
     return candidate
+
+
+def int2cube(i: int, zero: bool = True) -> str:
+    """
+    Преобразует целое неотрицательное число в строку из эмодзи-цифр.
+
+    :param i: целое число ≥ 0
+    :param zero: если False и i == 0, возвращает пустую строку
+    :return: строка из эмодзи-цифр
+    :raises ValueError: если i < 0
+    """
+    if i < 0:
+        raise ValueError("Функция не поддерживает отрицательные числа")
+
+    if i == 0:
+        return "" if not zero else "0️⃣"
+
+    # Маппинг по индексу — каждый эмодзи занимает 2 символа
+    mapping = ["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
+
+    return "".join(mapping[int(d)] for d in str(i))
