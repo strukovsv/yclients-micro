@@ -37,7 +37,7 @@ class Yclients(metaclass=MetaSingleton):
     def imobis_url(self, com):
         return f"https://api.fromni.com/user/{com}"
 
-    async def imobis_post(self, url):
+    async def imobis_post(self, url, body=None):
         logger.debug("imobis post !!!")
         async with httpx.AsyncClient() as client:
             # Сформировать заголовок для авторизации imobis
@@ -52,6 +52,7 @@ class Yclients(metaclass=MetaSingleton):
                 r = await client.post(
                     self.imobis_url(url),
                     headers=self.headers_imobis,
+                    json=body,
                     timeout=10.0,
                 )
             except Exception as e:
@@ -225,6 +226,105 @@ class Yclients(metaclass=MetaSingleton):
                         if not pagination:
                             break
                         if len(rows) < page_count:
+                            break
+                    else:
+                        records.append(rows)
+                        break
+                else:
+                    break
+            return records
+
+    async def imobis_load_object(
+        self,
+        obj_name: str,
+        url: str,
+        params: dict,
+        headers: str = None,
+        method: str = "get",
+        pagination: bool = True,
+    ) -> list:
+        """Запросить объект из api
+
+        :param str obj_name: наименование объекта, yaml файла и базовой таблицы
+        :param str url: ручка api
+        :param dict params: параметры
+        :param str headers: заголовок, по умолчанию заголовок пользователя
+        :param str method: http метод. По умолчанию get
+        :return list: возвращает список объектов
+        """
+        # По умолчанию заголовок пользователья
+        PAGE_COUNT = 10
+        headers_imobis = {
+            "Authorization": f"Token {config.IMOBIS_TOKEN}",
+            "Content-Type": "application/json",
+        }
+        async with httpx.AsyncClient() as client:
+            page = 0
+            records = []
+            while 1:
+                params["offset"] = page * PAGE_COUNT
+                params["limit"] = PAGE_COUNT
+                page += 1
+                # Зафиксировать время запроса
+                start = datetime.datetime.now()
+                # logger.info(f"{self.url(url)=} {params=}")
+                # Запросить в API
+                for i in range(0, 4):
+                    try:
+                        __url__ = self.url(url)
+                        API_YCLIENTS_POST_REQUEST_CNT.inc()
+                        r = await client.post(
+                            self.imobis_url(url),
+                            headers=headers_imobis,
+                            json=params,
+                            timeout=10.0,
+                        )
+                        js = r.json()
+                        if js["result"] == "success":
+                            rows = js["data"]
+                            break
+                        raise
+                    except Exception as e:
+                        # Получить user token
+                        if i < 3:
+                            logger.debug(
+                                f'attempt: "{i}", error: "{e}", url: "{__url__}"'  # noqa
+                            )
+                            # await asyncio.sleep(10)
+                            await asyncio.sleep(10)
+                            continue
+                        try:
+                            response = r.text
+                        except Exception:
+                            response = None
+                        API_YCLIENTS_REQUEST_ERROR_CNT.inc()
+                        if f"{e}" == "Не найдено":
+                            logger.error(
+                                f'httpx url: "{method} + {__url__}", response: "{response}", message: "Не найдено записей, вернуть []", params: "{params}"'  # noqa
+                            )  # noqa
+                            rows = []
+                        else:
+                            raise Exception(
+                                f'httpx url: "{method} + {__url__}", response: "{response}", message: "{e}", params: "{params}"'  # noqa
+                            )
+                # Поспать немного.
+                # Один запрос, не менее 1 сек
+                # Осталось до одной секуды
+                remain = (
+                    1.0 - (datetime.datetime.now() - start).total_seconds()
+                )
+                if remain > 0:
+                    logger.debug(f"sleep remain: {remain}")
+                    # В linux периоды можно задать меньше одной секунды
+                    await asyncio.sleep(remain)
+                if rows:
+                    if isinstance(rows, list):
+                        records.extend(rows)
+                        # Если строк вернули, меньше чем запросили,
+                        # то завершить чтение
+                        if not pagination:
+                            break
+                        if len(rows) < PAGE_COUNT:
                             break
                     else:
                         records.append(rows)
@@ -572,6 +672,18 @@ class Yclients(metaclass=MetaSingleton):
 
     async def close(self):
         pass
+
+    async def get_contacts(self, start_date, end_date, ids=None):
+        rows = await self.imobis_load_object(
+            obj_name="contacts",
+            url="contacts",
+            method="post",
+            params={},
+        )
+        logger.debug(f"get_contacts, rows: {len(rows)}")
+        return rows
+        # rows = await self.imobis_post(url="contacts")
+        # return rows
 
 
 async def sms_send_message(message):
