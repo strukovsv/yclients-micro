@@ -100,9 +100,12 @@ class Live(HeaderEvent):
 
 
 class Webhook(HeaderEvent):
-    """Входящие, перехваченное сообщение от клиента"""
 
     body: dict = Field(..., description="Перехваченное сообщение")  # noqa
+
+
+class WebhookFromni(Webhook):
+    """Входящие, перехваченное сообщение от клиента Fromni"""
 
     def route_key(self):
         key = self.body.get("data", {}).get("contact", {}).get("phone")
@@ -110,3 +113,17 @@ class Webhook(HeaderEvent):
             for data in self.body.get("data", {}).get("docs", []):
                 key = data.get("data", {}).get("phone")
         return f'{self.body.get("type")}::{key}'
+
+
+class WebhookAmoCrm(Webhook):
+
+    pass
+    # def route_key(self):
+    #     return None
+
+
+class WebhookYclients(Webhook):
+
+    pass
+    # def route_key(self):
+    #     return None
