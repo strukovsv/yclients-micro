@@ -8,23 +8,23 @@ OPENAPI = config.get("OPENAPI", None)
 SLEEP_AFTER_ERROR_SECOND = config.get("SLEEP_AFTER_ERROR_SECOND", 120)
 
 # Номер нашей сети
-CHAIN_ID = config.CHAIN_ID
+CHAIN_ID = config.get("CHAIN_ID", None)
 # Номер филиала
-COMPANY_ID = config.COMPANY_ID
+COMPANY_ID = config.get("COMPANY_ID", None)
 # Логин и токин подключеня к API
-YCLIENT_LOGIN = config.YCLIENT_LOGIN
-YCLIENT_PASSWORD = config.YCLIENT_PASSWORD
-PARTNER_TOKEN = config.PARTNER_TOKEN
-PAGE_COUNT = int(config.PAGE_COUNT)
+YCLIENT_LOGIN = config.get("YCLIENT_LOGIN", None)
+YCLIENT_PASSWORD = config.get("YCLIENT_PASSWORD", None)
+PARTNER_TOKEN = config.get("PARTNER_TOKEN", None)
+PAGE_COUNT = int(config.get("PAGE_COUNT", None)) if config.get("PAGE_COUNT", None) else None
 IMOBIS_TOKEN = config.get("IMOBIS_TOKEN", None)
 
 # Подключение к БД
-PG_DATABASE = config.DB_PG_BASE
-PG_HOST = config.DB_PG_HOST
+PG_DATABASE = config.get("config.DB_PG_BASE", None)
+PG_HOST = config.get("config.DB_PG_HOST", None)
 #
-PG_USER = config.DB_PG_USR_RW
-PG_PASSWORD = config.DB_PG_PWD_RW
-PG_PORT = config.DB_PG_PORT
+PG_USER = config.get("config.DB_PG_USR_RW", None)
+PG_PASSWORD = config.get("config.DB_PG_PWD_RW", None)
+PG_PORT = config.get("config.DB_PG_PORT", None)
 
 # Подключение к кафка
 CONSUMER_KAFKA = {

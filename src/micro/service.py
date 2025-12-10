@@ -4,6 +4,7 @@ import logging
 import json
 import datetime
 import traceback
+import time
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -152,12 +153,28 @@ async def get_environments():
     return hide_passwords(envs_sorted)
 
 
+# Глобальная переменная с моментом старта приложения
+_app_start_time = time.time()
+
+
+def uptime_str() -> str:
+    uptime_seconds = int(time.time() - _app_start_time)
+
+    days, remainder = divmod(uptime_seconds, 86400)
+    hours, seconds = divmod(remainder, 3600)
+
+    return f"{days}d {hours}h {seconds}s"
+
+
 @app.get("/health")
 async def healthcheck():
     if hasattr(app, "healthcheck"):
         return_value = await app.healthcheck()
         if return_value:
-            return return_value
+            if isinstance(return_value, dict):
+                return {**return_value, "uptime": uptime_str()}
+            else:
+                return return_value
         else:
             return JSONResponse(
                 content={"message": "Service works with errors"},
@@ -165,7 +182,7 @@ async def healthcheck():
             )
     else:
         if await Status().ok():
-            return {"status": "UP"}
+            return {"status": "UP", "uptime": uptime_str()}
         else:
             return JSONResponse(
                 content={"message": "Service works with errors"},
@@ -206,54 +223,6 @@ async def get_changelog(request: Request):
         </html>"""
     else:
         return lines
-
-
-@app.get("/schemes/{schema_name}")
-async def get_schemes(schema_name: str):
-    return JSONResponse(
-        content=Schema().get_schema(
-            schema_name=schema_name, return_type="json"
-        ),
-        headers={"Access-Control-Allow-Origin": "*"},
-    )
-
-
-@app.get("/avro/{schema_name}")
-async def get_avro(schema_name: str):
-    return JSONResponse(
-        content=Schema().get_schema(
-            schema_name=schema_name, return_type="avro"
-        ),
-        headers={"Access-Control-Allow-Origin": "*"},
-    )
-
-
-@app.get("/populate_schemes")
-async def populate_schemes():
-    return await Schema().populate_schemes()
-
-
-@app.get("/asyncapi")
-async def asyncapi():
-    return JSONResponse(
-        content=Schema().get_asyncapi(),
-        headers={"Access-Control-Allow-Origin": "*"},
-    )
-
-
-def custom_openapi():
-    openapi_schema = get_openapi(
-        title="FastAPI",
-        version="1.0.0",
-        description="This is a custom OpenAPI schema",
-        routes=app.routes,
-    )
-    for scheme_name, scheme_dict in (Schema().event_schemas()).items():
-        openapi_schema["components"]["schemas"][scheme_name] = scheme_dict
-    return openapi_schema
-
-
-app.openapi = custom_openapi
 
 
 # Do not log metrics and healthcheck
