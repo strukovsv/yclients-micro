@@ -96,7 +96,15 @@ select
     cl.js->>'display_name'
   ) as "[client] Клиент, unmasked",
   round(cast(cl.js->>'paid' as decimal)) as "[client] Сумма по клиенту, руб",
-  round(cast(cl.js->>'visits' as decimal)) as "[client] Визитов клиента, раз"
+  round(cast(cl.js->>'visits' as decimal)) as "[client] Визитов клиента, раз",
+  coalesce((select 'Есть'
+    from contacts c2
+   where exists (
+     select 1
+     from jsonb_array_elements(c2.js -> 'profiles') as profile
+     where profile ->> 'channel' = 'telegram')
+    and c2.js->>'phone' = cl.js->>'phone'
+  ), 'Нет') as "[telegram] telegram"
 from detail_clients2 cl""",
 
     "template_workflow2.sql": """
