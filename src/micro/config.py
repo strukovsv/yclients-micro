@@ -19,12 +19,12 @@ PAGE_COUNT = int(config.get("PAGE_COUNT", None)) if config.get("PAGE_COUNT", Non
 IMOBIS_TOKEN = config.get("IMOBIS_TOKEN", None)
 
 # Подключение к БД
-PG_DATABASE = config.get("config.DB_PG_BASE", None)
-PG_HOST = config.get("config.DB_PG_HOST", None)
+PG_DATABASE = config.get("DB_PG_BASE", None)
+PG_HOST = config.get("DB_PG_HOST", None)
 #
-PG_USER = config.get("config.DB_PG_USR_RW", None)
-PG_PASSWORD = config.get("config.DB_PG_PWD_RW", None)
-PG_PORT = config.get("config.DB_PG_PORT", None)
+PG_USER = config.get("DB_PG_USR_RW", None)
+PG_PASSWORD = config.get("DB_PG_PWD_RW", None)
+PG_PORT = config.get("DB_PG_PORT", None)
 
 # Подключение к кафка
 CONSUMER_KAFKA = {
