@@ -173,8 +173,9 @@ class BotEnteredReplyMessage(BotEnteredClass):
 
     text: str  # noqa
     message_id: int  # noqa
-    reply_text: str  # noqa
+    reply_text: str | None # noqa
     reply_message_id: int  # noqa
+    topic_id: int | None
 
 
 class BotCallback(BotEnteredClass):
@@ -381,3 +382,13 @@ class BotSendPhoto(BotSendBase):
     # fmt: off
     photo: str = Field(..., description="Изображение")  # noqa
     caption: str | None = Field(None, description="Подпись изображения")  # noqa
+
+
+class DialogueEnteredTextMessage(HeaderEvent):
+    """Пришло входящее сообщение в диалог по клиенту"""
+
+    # fmt: off
+    client_id: int = Field(..., description="Идентификатор клиента")  # noqa
+    topic: str = Field(..., description="Наименование топика в диалоге")  # noqa
+    text: str | List[str | None] = Field(None, description="Текс сообщения или массив сообщений")  # noqa
+    # fmt: on
