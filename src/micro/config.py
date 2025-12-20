@@ -15,7 +15,11 @@ COMPANY_ID = config.get("COMPANY_ID", None)
 YCLIENT_LOGIN = config.get("YCLIENT_LOGIN", None)
 YCLIENT_PASSWORD = config.get("YCLIENT_PASSWORD", None)
 PARTNER_TOKEN = config.get("PARTNER_TOKEN", None)
-PAGE_COUNT = int(config.get("PAGE_COUNT", None)) if config.get("PAGE_COUNT", None) else None
+PAGE_COUNT = (
+    int(config.get("PAGE_COUNT", None))
+    if config.get("PAGE_COUNT", None)
+    else None
+)
 IMOBIS_TOKEN = config.get("IMOBIS_TOKEN", None)
 
 # Подключение к БД

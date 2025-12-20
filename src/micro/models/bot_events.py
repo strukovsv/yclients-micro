@@ -173,9 +173,8 @@ class BotEnteredReplyMessage(BotEnteredClass):
 
     text: str  # noqa
     message_id: int  # noqa
-    reply_text: str | None # noqa
+    reply_text: str | None  # noqa
     reply_message_id: int  # noqa
-    topic_id: int | None
 
 
 class BotCallback(BotEnteredClass):
@@ -376,12 +375,67 @@ class BotSendText(BotSendBase):
     # fmt: on
 
 
+class BotSendTextChannel(BotSendBase):
+    """Послать сообщение боту"""
+
+    # fmt: off
+    text: str | List[str | None] = Field(None, description="Текс сообщения или массив сообщений")  # noqa
+    plain: int | None = Field(None, description="Использовать моноширифный текст 1")  # noqa
+    format: str | None = Field(None, description="Формат сообщения (markdown (по умолчанию) и html по умолчанию)")  # noqa
+    # fmt: on
+
+
 class BotSendPhoto(BotSendBase):
     """Послать рисунок боту"""
 
     # fmt: off
     photo: str = Field(..., description="Изображение")  # noqa
     caption: str | None = Field(None, description="Подпись изображения")  # noqa
+
+
+class BotBaseTopic(HeaderEvent):
+    """Базовое сообщение для бота"""
+
+    chat_id: int
+    bot: str = config.TELEGRAM_BOT
+
+    def route_key(self):
+        return f"{self.bot}:{self.chat_id}"
+
+    def is_this_bot(self):
+        return self.bot and self.bot == config.TELEGRAM_BOT
+
+
+class BotUpdateTopic(BotBaseTopic):
+    """Создать новый топик, если нету или обновить текущий"""
+
+    # fmt: off
+    dialogues_id: int = Field(..., description="Идентификатор диалога")  # noqa
+    caption: str = Field(..., description="Наименование топика")  # noqa
+    emoji: str | None = Field(None, description="Emoji")  # noqa
+    # fmt: on
+
+
+class BotSendTextTopic(BotSendBase):
+    """Послать сообщение в topic"""
+
+    # fmt: off
+    caption: str = Field(..., description="Наименование топика")  # noqa
+    text: str | List[str | None] = Field(None, description="Текс сообщения")  # noqa
+    dialogues_id: int = Field(..., description="Идентификатор диалога")  # noqa
+    emoji: str | None = Field(None, description="Emoji")  # noqa
+    # fmt: on
+
+
+class BotEnteredReplyMessageTopic(BotEnteredClass):
+    """Введен ответ на текст в topic"""
+
+    # fmt: off
+    message_id: int = Field(..., description="Идентификтор сообщения")  # noqa
+    reply_text: str | None = Field(..., description="На какой вопрос ответили")  # noqa
+    reply_message_id: int = Field(..., description="Идентификтор входящего сообщения")  # noqa
+    dialogues_id: int = Field(..., description="Идентификтор диалога")  # noqa
+    # fmt: on
 
 
 class DialogueEnteredTextMessage(HeaderEvent):
@@ -391,4 +445,12 @@ class DialogueEnteredTextMessage(HeaderEvent):
     client_id: int = Field(..., description="Идентификатор клиента")  # noqa
     topic: str = Field(..., description="Наименование топика в диалоге")  # noqa
     text: str | List[str | None] = Field(None, description="Текс сообщения или массив сообщений")  # noqa
+    # fmt: on
+
+
+class DialogueCreateTopic(HeaderEvent):
+    """Создать новый топик в диалоге, если не найден"""
+
+    # fmt: off
+    client_id: int = Field(..., description="Идентификатор клиента")  # noqa
     # fmt: on

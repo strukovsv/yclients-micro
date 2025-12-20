@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
 import os
 
 from micro.render_ext import to_text
@@ -31,6 +29,17 @@ async def send_admin(template: str, data: dict) -> None:
     """Отправить сообщение менеджерам."""
     message = await to_text(template=template, **data)
     await InfoEvent(text=message).send()
+
+
+async def send_channel(
+    template: str,
+    data: dict,
+    channel: str,
+    debug: bool,
+):
+    """Отправить сообщение в telegram chat (группу) или канал."""
+    message = await to_text(template=template, **data)
+    await Report(text=message).send(channel=channel)
 
 
 async def send_client(template: str, data: dict, debug: bool = False) -> None:
@@ -99,17 +108,36 @@ where ws.id = %(id)s""",
 async def send_message(
     workflow: str, stage: str, data: dict, debug: bool = False
 ) -> None:
-    file_client = f"{workflow}/{stage}_client.txt".lower()
-    if template_exists(file_client):
-        await send_client(template=file_client, data=data, debug=debug)
-        logger.info(f"send file client: {file_client}")
+    """Отправить сообщения по шаблонам с постфиксами ролей и произвольными числовыми идентификаторами
 
-    file_manager = f"{workflow}/{stage}_manager.txt".lower()
-    if template_exists(file_manager):
-        await send_manager(template=file_manager, data=data)
-        logger.info(f"send file manager: {file_manager}")
-
-    file_admin = f"{workflow}/{stage}_admin.txt".lower()
-    if template_exists(file_admin):
-        await send_admin(template=file_admin, data=data)
-        logger.info(f"send file admin: {file_admin}")
+    :param str workflow: имя workflow (каталог шаблонов)
+    :param str stage: этап обработки (часть имени файла)
+    :param dict  данные для рендеринга шаблона
+    :param bool debug: включить режим отладки для клиентских шаблонов, defaults to False
+    """
+    for postfix in ["client", "manager", "admin", "attention"]:
+        template = f"{workflow}/{stage}_{postfix}.txt".lower()
+        if template_exists(template):
+            senders = {
+                "client": lambda t=template: send_client(
+                    template=t, data=data, debug=debug
+                ),
+                "manager": lambda t=template: send_manager(
+                    template=t, data=data
+                ),
+                "admin": lambda t=template: send_admin(template=t, data=data),
+            }
+            sender = senders.get(postfix)
+            if sender:
+                await sender()
+                logger.info(f"send file {postfix}: {template}")
+            else:
+                await send_channel(
+                    template=template,
+                    data=data,
+                    channel=postfix,
+                    debug=False,
+                )
+                logger.info(
+                    f"send file into channel {postfix}, file: {template}"
+                )

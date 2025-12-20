@@ -34,6 +34,7 @@ class Addresse(BaseModel):
     # fmt: off
     client_id: str | None = Field(None, description="Получатель сообщения в yclients SMS") # noqa
     chat_id: str | None = Field(None, description="Получатель сообщения в telegram") # noqa
+    channel: str | None = Field(None, description="Идентификатор канала или группы в telegram") # noqa
     # fmt: on
 
 
@@ -47,6 +48,7 @@ class HeaderEvent(AvroBase):
         return (
             self.addresse.chat_id
             or self.addresse.client_id
+            or self.addresse.channel
             or config.PRODUCER_ID
             or "na"
         )
@@ -63,6 +65,7 @@ class HeaderEvent(AvroBase):
         client_id: str = None,
         addresse: Addresse = None,
         chat_id: str = None,
+        channel: str = None,
         parent: object = None,
     ) -> None:
         """Отправить объект в поток
@@ -92,7 +95,7 @@ class HeaderEvent(AvroBase):
         )
         # Получатель сообщения
         self.addresse = addresse or Addresse(
-            client_id=client_id, chat_id=chat_id
+            client_id=client_id, chat_id=chat_id, channel=channel,
         )
         # Сформировать атрибут для цепочки сообщений
         # Если задан родитель в отправке, то из него взять значение
