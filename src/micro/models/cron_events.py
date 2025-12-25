@@ -533,3 +533,9 @@ class CheckWorkflow(CronBaseClass):
     """
 
     pass
+
+
+class UpdateBudget(CronBaseClass):
+    """Отправить событие пересчитать бюджет"""
+
+    pass
