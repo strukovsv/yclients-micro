@@ -35,7 +35,7 @@ class Yclients(metaclass=MetaSingleton):
         self.debug = str(os.environ.get("YCLIENTS_DEBUG", "0")) != "0"
 
     def imobis_url(self, com):
-        return f"https://api.fromni.com/user/{com}"
+        return f"https://api.fromni.ru/user/{com}"
 
     async def imobis_post(self, url, body=None):
         logger.debug("imobis post !!!")
@@ -273,12 +273,38 @@ class Yclients(metaclass=MetaSingleton):
                     try:
                         __url__ = self.url(url)
                         API_YCLIENTS_POST_REQUEST_CNT.inc()
-                        r = await client.post(
-                            self.imobis_url(url),
-                            headers=headers_imobis,
-                            json=params,
-                            timeout=10.0,
-                        )
+                        logger.info(f'{__url__=} {params=}')
+                        try:
+                            r = await client.post(
+                                self.imobis_url(url),
+                                headers=headers_imobis,
+                                json=params,
+                                timeout=60.0,
+                            )
+                        except httpx.ConnectTimeout:
+                            logger.error("Таймаут подключения к fromni API")
+                            raise
+                        except httpx.ReadTimeout:
+                            logger.error("Таймаут ожидания ответа от fromni API")
+                            raise
+                        except httpx.NetworkError as e:
+                            # Включает: ConnectError, ReadError, WriteError и др.
+                            logger.error(f"Сетевая ошибка при обращении к fromni: {e}")
+                            raise
+                        except httpx.HTTPStatusError as e:
+                            # Сервер вернул 4xx или 5xx
+                            logger.error(
+                                f"HTTP ошибка от fromni: {e.response.status_code} - {e}"
+                            )
+                            raise
+                        except ValueError as e:
+                            # Например, ответ не в JSON
+                            logger.error(f"Ответ не в формате JSON: {e}")
+                            raise
+                        except Exception:
+                            # Любая другая непредвиденная ошибка
+                            logger.error("Неожиданная ошибка при отправке в fromni")
+                            raise
                         js = r.json()
                         if js["result"] == "success":
                             rows = js["data"]
@@ -287,7 +313,7 @@ class Yclients(metaclass=MetaSingleton):
                     except Exception as e:
                         # Получить user token
                         if i < 3:
-                            logger.debug(
+                            logger.info(
                                 f'attempt: "{i}", error: "{e}", url: "{__url__}"'  # noqa
                             )
                             # await asyncio.sleep(10)
