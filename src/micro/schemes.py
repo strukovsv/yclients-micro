@@ -26,6 +26,7 @@ import micro.models.cron_events # noqa
 import micro.models.buh_events # noqa
 import micro.models.mail_events # noqa
 import micro.models.chat_events # noqa
+import micro.models.crm_events # noqa
 
 
 logger = logging.getLogger(__name__)

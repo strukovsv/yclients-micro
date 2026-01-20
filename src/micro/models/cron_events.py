@@ -21,7 +21,7 @@ import json
 from micro.render_ext import to_text
 from micro.models.common_events import Report, InfoEvent
 
-from pydantic import Field
+from pydantic import Field, ConfigDict
 
 from micro.models.header_event import HeaderEvent
 from micro.pg_ext import fetchone, execute, returning, select
@@ -81,14 +81,13 @@ class Workflow(CronBaseClass):
         ]
     """
 
+    model_config = ConfigDict()
+
     _workflow_id: Optional[int] = None
 
     _js: Optional[dict] = None
 
     _stage: Optional[str] = None
-
-    class Config:
-        underscore_attrs_are_private = True
 
     def get_event(self) -> Optional[str]:
         """
