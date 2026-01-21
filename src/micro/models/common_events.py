@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from enum import StrEnum
+
 from typing import Any, List, Optional, Union
 
 from pydantic_avro.base import AvroBase
@@ -127,3 +129,18 @@ class WebhookYclients(Webhook):
     pass
     # def route_key(self):
     #     return None
+
+
+class ReportRequestedType(StrEnum):
+
+    TRADING_REPORT = "Trading report"
+    TRADING_REPORT_BRIEF = "Trading report brief"
+
+
+class ReportRequested(HeaderEvent):
+    """Запрошен пользователем отчет"""
+
+    # fmt: off
+    report_type: ReportRequestedType = Field(..., description="Тип отчета")
+    period: str = Field(..., description="Период отчета")
+    # fmt: on
