@@ -26,6 +26,8 @@ class Yclients(metaclass=MetaSingleton):
     headers_user: str = None
     # Включен режим отладки
     debug: bool = None
+    # Каналы отправки закэшировать
+    fromni_channels: list = None
 
     def __init__(self, is_create_yaml: bool = None):
         self.chain_id = config.CHAIN_ID
@@ -61,7 +63,10 @@ class Yclients(metaclass=MetaSingleton):
                 logger.error(f"{e=}")
                 logger.error(f"{self.imobis_url(url)=}")
                 logger.error(f"{self.headers_imobis=}")
-                logger.error(r.text)
+                try:
+                    logger.error(r.text)
+                except Exception:
+                    pass
                 raise
             try:
                 result = r.json()
@@ -242,6 +247,7 @@ class Yclients(metaclass=MetaSingleton):
         headers: str = None,
         method: str = "get",
         pagination: bool = True,
+        is_get_blocks: bool = True,
     ) -> list:
         """Запросить объект из api
 
@@ -262,9 +268,10 @@ class Yclients(metaclass=MetaSingleton):
             page = 0
             records = []
             while 1:
-                params["offset"] = page * PAGE_COUNT
-                params["limit"] = PAGE_COUNT
-                page += 1
+                if is_get_blocks:
+                    params["offset"] = page * PAGE_COUNT
+                    params["limit"] = PAGE_COUNT
+                    page += 1
                 # Зафиксировать время запроса
                 start = datetime.datetime.now()
                 # logger.info(f"{self.url(url)=} {params=}")
@@ -273,7 +280,7 @@ class Yclients(metaclass=MetaSingleton):
                     try:
                         __url__ = self.url(url)
                         API_YCLIENTS_POST_REQUEST_CNT.inc()
-                        logger.info(f'{__url__=} {params=}')
+                        logger.info(f"{__url__=} {params=}")
                         try:
                             r = await client.post(
                                 self.imobis_url(url),
@@ -285,16 +292,20 @@ class Yclients(metaclass=MetaSingleton):
                             logger.error("Таймаут подключения к fromni API")
                             raise
                         except httpx.ReadTimeout:
-                            logger.error("Таймаут ожидания ответа от fromni API")
+                            logger.error(
+                                "Таймаут ожидания ответа от fromni API"
+                            )
                             raise
                         except httpx.NetworkError as e:
                             # Включает: ConnectError, ReadError, WriteError и др.
-                            logger.error(f"Сетевая ошибка при обращении к fromni: {e}")
+                            logger.error(
+                                f"Сетевая ошибка при обращении к fromni: {e}"
+                            )
                             raise
                         except httpx.HTTPStatusError as e:
                             # Сервер вернул 4xx или 5xx
                             logger.error(
-                                f"HTTP ошибка от fromni: {e.response.status_code} - {e}"
+                                f"HTTP ошибка от fromni: {e.response.status_code} - {e}"  # noqa
                             )
                             raise
                         except ValueError as e:
@@ -303,7 +314,9 @@ class Yclients(metaclass=MetaSingleton):
                             raise
                         except Exception:
                             # Любая другая непредвиденная ошибка
-                            logger.error("Неожиданная ошибка при отправке в fromni")
+                            logger.error(
+                                "Неожиданная ошибка при отправке в fromni"
+                            )
                             raise
                         js = r.json()
                         if js["result"] == "success":
@@ -350,7 +363,9 @@ class Yclients(metaclass=MetaSingleton):
                         # то завершить чтение
                         if not pagination:
                             break
-                        if len(rows) < PAGE_COUNT:
+                        if is_get_blocks and len(rows) < PAGE_COUNT:
+                            break
+                        if not is_get_blocks:
                             break
                     else:
                         records.append(rows)
@@ -710,6 +725,68 @@ class Yclients(metaclass=MetaSingleton):
         return rows
         # rows = await self.imobis_post(url="contacts")
         # return rows
+
+    async def get_conversations(
+        self, start_date=None, end_date=None, ids=None
+    ):
+        """Получить все диалоги из fromni"""
+        rows = await self.imobis_load_object(
+            obj_name="conversations",
+            url="conversations",
+            method="post",
+            params={"offset": 0, "limit": 5},
+            is_get_blocks=False,
+        )
+        logger.debug(f"get_conversations, rows: {len(rows)}")
+        return rows
+
+    async def get_conversation_messages(
+        self, start_date=None, end_date=None, ids=None
+    ):
+        """Получить сообщения диалога"""
+        rows = await self.imobis_load_object(
+            obj_name="messages",
+            url="conversation/messages",
+            method="post",
+            params={"conversationId": ids},
+            is_get_blocks=False,
+        )
+        logger.debug(f"get_conversation_messages, rows: {len(rows)}")
+        return rows
+
+    async def get_fromni_channels(self):
+        """Получить из fromni список каналов для отправки"""
+        if not self.fromni_channels:
+            connections = await self.imobis_post(url="/channels/connections")
+            self.fromni_channels = []
+            # Порядок отправки сообщения по каналам
+            for name in ["telegram", "telegram-web", "whatsapp"]:
+                channel_connections = connections.get("data", {}).get(name, [])
+                channel_ids = [conn.get("id") for conn in channel_connections]
+                self.fromni_channels.append(
+                    {"name": name, "connections": channel_ids}
+                )
+        return self.fromni_channels
+
+    async def send_imobis_message(
+        self, message: str, phone: str = None, contact_id: str = None
+    ):
+        """Отправить сообщение напрямую через fromni
+        Возвращает идентификатор сообщения ID нотификации: str
+        Результат доставки через webhook - notification_message_updated"""
+        body = {
+            "message": {"text": message},
+            "channels": await self.get_fromni_channels(),
+        }
+        if phone:
+            body["phone"] = phone
+        if contact_id:
+            body["contactId"] = contact_id
+        result = await self.imobis_post(
+            url="/notifications/send",
+            body=body,
+        )
+        return result["id"]
 
 
 async def sms_send_message(message):
