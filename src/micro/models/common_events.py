@@ -185,12 +185,12 @@ class Webhook(HeaderEvent):
 class WebhookFromniReceived(Webhook):
     """Входящие, перехваченное сообщение от клиента Fromni"""
 
-    def route_key(self):
-        key = self.body.get("data", {}).get("contact", {}).get("phone")
-        if not key:
-            for data in self.body.get("data", {}).get("docs", []):
-                key = data.get("data", {}).get("phone")
-        return f'{self.body.get("type")}::{key}'
+    # def route_key(self):
+    #     key = self.body.get("data", {}).get("contact", {}).get("phone")
+    #     if not key:
+    #         for data in self.body.get("data", {}).get("docs", []):
+    #             key = data.get("data", {}).get("phone")
+    #     return f'{self.body.get("type")}::{key}'
 
 
 class WebhookCrmReceived(Webhook):
