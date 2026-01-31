@@ -106,7 +106,7 @@ class Yclients(metaclass=MetaSingleton):
                         },
                         timeout=10.0,
                     )
-                    logger.info(f'auth: {r.content}')
+                    # logger.info(f'auth: {r.content}')
                 except Exception as e:
                     API_YCLIENTS_REQUEST_ERROR_CNT.inc()
                     # Получить user token
@@ -186,7 +186,7 @@ class Yclients(metaclass=MetaSingleton):
                                 json=params,
                                 timeout=10.0,
                             )
-                        logger.info(f'{r.content=}')
+                        # logger.info(f'{r.content=}')
                         js = r.json()
                         if not js["success"]:
                             raise Exception(js["meta"]["message"])
