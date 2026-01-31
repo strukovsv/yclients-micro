@@ -93,7 +93,7 @@ class Yclients(metaclass=MetaSingleton):
                     "Content-Type": "application/json",
                     "Accept": "application/vnd.yclients.v2+json",
                 }
-                logger.debug(f"{self.headers_partner=}")
+                logger.info(f"{self.headers_partner=}")
                 # Авторизоваться в системе
                 try:
                     API_YCLIENTS_POST_REQUEST_CNT.inc()
@@ -106,6 +106,7 @@ class Yclients(metaclass=MetaSingleton):
                         },
                         timeout=10.0,
                     )
+                    logger.info(f'auth: {r.content}')
                 except Exception as e:
                     API_YCLIENTS_REQUEST_ERROR_CNT.inc()
                     # Получить user token
@@ -185,6 +186,7 @@ class Yclients(metaclass=MetaSingleton):
                                 json=params,
                                 timeout=10.0,
                             )
+                        logger.info(f'{r.content=}')
                         js = r.json()
                         if not js["success"]:
                             raise Exception(js["meta"]["message"])
