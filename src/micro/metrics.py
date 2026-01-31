@@ -14,10 +14,16 @@ API_YCLIENTS_REQUEST_ERROR_CNT = Counter(
     "api_yclients_request_error_cnt", "Count error request to api yclients"
 )
 
-DO_EVENTS_CNT = Counter("do_events_cnt", "Count event receive from kafka")
+DO_EVENTS_CNT = Counter(
+    "do_events_cnt", "Incoming event count for the consumer server"
+)
 
 WORKED_EVENTS_CNT = Counter(
-    "worked_events_cnt", "Count worked event from kafka this"
+    "worked_events_cnt", "Count of processed incoming events"
+)
+
+EVENTS_SENT_CNT = Counter(
+    "events_sent_cnt", "Count of events sent from the service"
 )
 
 PG_EXECUTE_CNT = Counter(

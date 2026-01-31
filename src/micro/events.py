@@ -3,8 +3,6 @@ import re
 
 from types import FunctionType
 
-from .metrics import DO_EVENTS_CNT, WORKED_EVENTS_CNT
-
 logger = logging.getLogger(__name__)
 
 
@@ -24,14 +22,12 @@ class Events:
 
     @classmethod
     async def do(cls, js):
-        DO_EVENTS_CNT.inc()
         event_name = js.get("event", None)
         if event_name:
             for name, func in cls.__dict__.items():
                 if type(func) is FunctionType and (
                     get_event_name(event_name) + "_"
                 ).startswith(f"{name}_"):
-                    WORKED_EVENTS_CNT.inc()
                     event_split = event_name.split(".")
                     # Кратко распечатать 200 символов json
                     js_example = {

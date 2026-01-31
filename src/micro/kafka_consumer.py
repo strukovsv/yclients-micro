@@ -8,6 +8,8 @@ import micro.config as config
 
 from micro.schemes import Schema
 
+from .metrics import DO_EVENTS_CNT, WORKED_EVENTS_CNT
+
 logger = logging.getLogger(__name__)
 
 
@@ -73,6 +75,9 @@ def event_handler(event_name):
 
 
 async def capture(message: dict) -> None:
+    # Входящее событие в сервис
+    DO_EVENTS_CNT.inc()
+    # Получить имя события
     event_name = message.get("header", {}).get("event", None) or message.get(
         "event", None
     )
@@ -82,6 +87,8 @@ async def capture(message: dict) -> None:
         if handler["name"].lower() == event_name.lower():
             # logger.info(f"capture message: {message=}")
             await handler["handler"](message)
+            # Обработано входящее событие
+            WORKED_EVENTS_CNT.inc()
     # -- legasy
     # Перебрать все обработчики событий
     for handler in event_handlers:
@@ -97,5 +104,7 @@ async def capture(message: dict) -> None:
                 await data_obj.deserialization()
                 # Вызвать функцию обработчик события, передать на вход объект
                 await handler["handler"](data_obj)
+                # Обработано входящее событие
+                WORKED_EVENTS_CNT.inc()
             else:
                 raise Exception(f"Не найдена model {event_name}")

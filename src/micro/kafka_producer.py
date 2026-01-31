@@ -11,6 +11,8 @@ from micro.singleton import MetaSingleton
 
 import micro.config as config
 
+from .metrics import EVENTS_SENT_CNT
+
 logger = logging.getLogger(__name__)
 
 
@@ -97,6 +99,8 @@ class KafkaProducer(metaclass=MetaSingleton):
                 data, ensure_ascii=False, default=serialize_datetime
             ).encode(),
         )
+        # Отправлено событие в kafka
+        EVENTS_SENT_CNT.inc()
 
     async def stop(self):
         """Остановить kafka соединение и отпустить объект"""
