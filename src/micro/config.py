@@ -2,6 +2,8 @@ from bestconfig import Config
 
 config = Config()
 
+production = config.get("ENVIRONMENT", "stage") in ["prod", "production"]
+
 OPENAPI = config.get("OPENAPI", None)
 
 # Заснуть после ошибки
