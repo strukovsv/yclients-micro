@@ -686,7 +686,7 @@ class Yclients(metaclass=MetaSingleton):
     async def send_message(self, message, client_ids: list):
         """Отправить сообщение средствами yclients"""
         # Установлена переменная тестовой отправки только этому клиенту
-        test_client_id = int(micro.utils.getenv("MESSAGE_CLIENT_ID", "0"))
+        test_client_id = 222715438 if not config.production else None
         async with httpx.AsyncClient() as client:
             try:
                 r = await client.post(
@@ -697,7 +697,7 @@ class Yclients(metaclass=MetaSingleton):
                             [test_client_id] if test_client_id else client_ids
                         ),
                         "text": (
-                            f"""test for client: {client_ids}
+                            f"""yclients for: {client_ids}
 -----------------------
 {message}"""
                             if test_client_id
@@ -776,19 +776,30 @@ class Yclients(metaclass=MetaSingleton):
         """Отправить сообщение напрямую через fromni
         Возвращает идентификатор сообщения ID нотификации: str
         Результат доставки через webhook - notification_message_updated"""
-        body = {
-            "message": {"text": message},
-            "channels": await self.get_fromni_channels(),
-        }
-        if phone:
-            body["phone"] = phone
-        if contact_id:
-            body["contactId"] = contact_id
-        result = await self.imobis_post(
-            url="/notifications/send",
-            body=body,
-        )
-        return result["id"]
+        body = {}
+        if not phone and not contact_id:
+            raise Exception(
+                "Не задан параметр phone или contactId при отправке в Fromni"
+            )
+        else:
+            if config.production:
+                if phone:
+                    body["phone"] = phone
+                if contact_id:
+                    body["contactId"] = contact_id
+                text = message
+            else:
+                body["phone"] = "79233549672"
+                text = f"""fromni for: {phone}
+-----------------------
+{message}"""
+            body["message"] = {"text": text}
+            body["channels"] = await self.get_fromni_channels()
+            result = await self.imobis_post(
+                url="/notifications/send",
+                body=body,
+            )
+            return result["id"]
 
 
 async def sms_send_message(message):

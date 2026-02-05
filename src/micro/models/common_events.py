@@ -40,6 +40,7 @@ class Report(HeaderEvent):
 
 class MessagePreparedForStaff(HeaderEvent):
     """Сообщение для персонала готово к отправке в telegram бот"""
+
     # fmt: off
     sender: str | None = Field(None, description="Кто отправил сообщение клиенту") # noqa
     chat_id: int = Field(..., description="Идентификатор чата администратора") # noqa
@@ -52,18 +53,7 @@ class MessagePreparedForStaff(HeaderEvent):
 
 class MessagePreparedForClient(HeaderEvent):
     """Сообщение для клиента готово к отправке через внешнее API"""
-    # fmt: off
-    sender: str | None = Field(None, description="Кто отправил сообщение клиенту") # noqa
-    client_id: int = Field(..., description="Идентификатор клиента в yclients") # noqa
-    text: Union[str, List[str | None], None] = Field(..., description="Текст отчета, строка или массив строк") # noqa
-    type: str | None = Field(None, description="Тип отчета: html, markdown") # noqa
-    plain: int | None = Field(None, description="Использовать моноширифный текст 1")  # noqa
-    role: str | None = Field(None, description="Роль по умолчанию, если не задана, то отправил сервис") # noqa
-    # fmt: on
 
-
-class MessageSentToClient(HeaderEvent):
-    """Сообщение успешно отправлено клиенту и мы получили код сообщения"""
     # fmt: off
     sender: str | None = Field(None, description="Кто отправил сообщение клиенту") # noqa
     client_id: int = Field(..., description="Идентификатор клиента в yclients") # noqa
@@ -72,8 +62,28 @@ class MessageSentToClient(HeaderEvent):
     type: str | None = Field(None, description="Тип отчета: html, markdown") # noqa
     plain: int | None = Field(None, description="Использовать моноширифный текст 1")  # noqa
     role: str | None = Field(None, description="Роль по умолчанию, если не задана, то отправил сервис") # noqa
-    notification_id: str = Field(None, description="Идентификатор отправленного сообщения") # noqa
     # fmt: on
+
+    def route_key(self):
+        return self.client_id
+
+
+class MessageSentToClient(HeaderEvent):
+    """Сообщение успешно отправлено клиенту и мы получили код сообщения"""
+
+    # fmt: off
+    sender: str | None = Field(None, description="Кто отправил сообщение клиенту") # noqa
+    client_id: int = Field(..., description="Идентификатор клиента в yclients") # noqa
+    phone: str = Field(..., description="Телефон клиента") # noqa
+    text: Union[str, List[str | None], None] = Field(..., description="Текст отчета, строка или массив строк") # noqa
+    type: str | None = Field(None, description="Тип отчета: html, markdown") # noqa
+    plain: int | None = Field(None, description="Использовать моноширифный текст 1")  # noqa
+    role: str | None = Field(None, description="Роль по умолчанию, если не задана, то отправил сервис") # noqa
+    notification_uid: str = Field(None, description="Идентификатор отправленного сообщения") # noqa
+    # fmt: on
+
+    def route_key(self):
+        return self.client_id
 
 
 class MessagePreparedForChat(HeaderEvent):
@@ -81,6 +91,7 @@ class MessagePreparedForChat(HeaderEvent):
     Попытка реализовать чат с клиентом на каналах и топиках
     Не взлетело :(
     """
+
     # fmt: off
     sender: str | None = Field(None, description="Кто отправил сообщение клиенту") # noqa
     channel: str = Field(..., description="Идентификатор канала") # noqa
@@ -95,10 +106,10 @@ class MessageStatusReceived(HeaderEvent):
     """Пришел от fromni статус отправленного сообщения"""
 
     # fmt: off
-    fromni_client_id: str = Field(..., description="Идентификатор клиента в fromni") # noqa
+    fromni_notification_uid: str = Field(..., description="Идентификатор клиента в fromni") # noqa
     phone: str = Field(..., description="Телефон клиента") # noqa
     status: str = Field(..., description="Статус отправленного сообщения") # noqa
-    cannel: str = Field(..., description="Канал") # noqa
+    channel: str = Field(..., description="Канал") # noqa
     # fmt: on
 
 
@@ -106,21 +117,9 @@ class MessageReceivedFromClient(HeaderEvent):
     """Пришло новое сообщение от клиента"""
 
     # fmt: off
+    client_id: int = Field(..., description="Идентификатор клиента в yclients") # noqa
     text: str = Field(..., description="Текст сообщения") # noqa
     phone: str = Field(..., description="Телефон клиента") # noqa
-    # fmt: on
-
-
-class SaveMessageEvent(HeaderEvent):
-    """Сохранить сообщение в истории"""
-
-    # fmt: off
-    sender: str | None = Field(None, description="Кто отправил сообщение клиенту") # noqa
-    client_id: int = Field(description="Идентификатор клиента")  # noqa
-    text: Union[str, List[str | None], None] = Field(..., description="Текст отчета, строка или массив строк") # noqa
-    type: str | None = Field(None, description="Тип отчета: html, markdown") # noqa
-    plain: int | None = Field(None, description="Использовать моноширифный текст 1")  # noqa
-    role: str | None = Field(None, description="Роль по умолчанию, если не задана, то отправил сервис") # noqa
     # fmt: on
 
     def route_key(self):
