@@ -538,3 +538,21 @@ class UpdateBudget(CronBaseClass):
     """Отправить событие пересчитать бюджет"""
 
     pass
+
+
+class HourPassed(CronBaseClass):
+    """Отправить событие каждый час"""
+
+    ...
+
+
+class TwoHoursPassed(CronBaseClass):
+    """Отправить событие каждые 2 часа"""
+
+    ...
+
+
+class MidnightReached(CronBaseClass):
+    """Отправить событие каждые сутки в 00 часов"""
+
+    ...

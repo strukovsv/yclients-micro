@@ -2,6 +2,7 @@ from bestconfig import Config
 
 config = Config()
 
+# ENVIRONMENT=production
 production = config.get("ENVIRONMENT", "stage") in ["prod", "production"]
 
 OPENAPI = config.get("OPENAPI", None)
