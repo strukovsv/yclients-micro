@@ -55,7 +55,7 @@ class Yclients(metaclass=MetaSingleton):
                     self.imobis_url(url),
                     headers=self.headers_imobis,
                     json=body,
-                    timeout=10.0,
+                    timeout=60.0,
                 )
             except Exception as e:
                 API_YCLIENTS_REQUEST_ERROR_CNT.inc()

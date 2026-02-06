@@ -2,12 +2,10 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from typing import Any, List, Optional, Union
+from typing import List, Union
 
-from pydantic_avro.base import AvroBase
 from pydantic import Field
 
-from micro.models.api_records import YclientsRecord
 from micro.models.header_event import HeaderEvent
 
 
@@ -110,6 +108,19 @@ class MessageStatusReceived(HeaderEvent):
     phone: str = Field(..., description="Телефон клиента") # noqa
     status: str = Field(..., description="Статус отправленного сообщения") # noqa
     channel: str = Field(..., description="Канал") # noqa
+    # fmt: on
+
+
+class UpdatedMessageStatus(HeaderEvent):
+    """Обновлен статус сообщения в системе"""
+
+    # fmt: off
+    id: int = Field(..., description="Идентификатор сообщения") # noqa
+    client_id: int = Field(..., description="Идентификатор клиента в yclients") # noqa
+    phone: str = Field(..., description="Телефон получателя сообщения") # noqa
+    sender: str = Field(..., description="Отправитель сообщения") # noqa
+    text: str = Field(..., description="Текст сообщения") # noqa
+    status: str = Field(..., description="Статус сообщения") # noqa
     # fmt: on
 
 
