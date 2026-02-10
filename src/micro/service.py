@@ -5,11 +5,10 @@ import json
 import datetime
 import traceback
 import time
+import threading
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.openapi.utils import get_openapi
-from fastapi.openapi.docs import get_swagger_ui_html
 from starlette_exporter import PrometheusMiddleware, handle_metrics
 from contextlib import asynccontextmanager
 
@@ -140,6 +139,10 @@ app.add_route("/metrics", handle_metrics)
 
 app.events = None
 
+
+@app.get("/threading")
+async def get_threading():
+    return {"pid": os.getpid(), "thread": threading.get_ident()}
 
 @app.get("/envs")
 async def get_environments():

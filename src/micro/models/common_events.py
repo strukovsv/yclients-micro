@@ -56,6 +56,7 @@ class MessagePreparedForClient(HeaderEvent):
     sender: str | None = Field(None, description="Кто отправил сообщение клиенту") # noqa
     client_id: int = Field(..., description="Идентификатор клиента в yclients") # noqa
     phone: str = Field(..., description="Телефон клиента") # noqa
+    telegram_id: int | None = Field(None, description="Идентификатор клиента в telegram") # noqa
     text: Union[str, List[str | None], None] = Field(..., description="Текст отчета, строка или массив строк") # noqa
     type: str | None = Field(None, description="Тип отчета: html, markdown") # noqa
     plain: int | None = Field(None, description="Использовать моноширифный текст 1")  # noqa
@@ -78,6 +79,7 @@ class MessageSentToClient(HeaderEvent):
     plain: int | None = Field(None, description="Использовать моноширифный текст 1")  # noqa
     role: str | None = Field(None, description="Роль по умолчанию, если не задана, то отправил сервис") # noqa
     notification_uid: str = Field(None, description="Идентификатор отправленного сообщения") # noqa
+    channel: str = Field(None, description="Канал отправки сообщения") # noqa
     # fmt: on
 
     def route_key(self):

@@ -799,7 +799,7 @@ class Yclients(metaclass=MetaSingleton):
                 url="/notifications/send",
                 body=body,
             )
-            return result["id"]
+            return result.get("id", "Не доставлен")
 
 
 async def sms_send_message(message):
