@@ -79,7 +79,7 @@ class MessageSentToClient(HeaderEvent):
     plain: int | None = Field(None, description="Использовать моноширифный текст 1")  # noqa
     role: str | None = Field(None, description="Роль по умолчанию, если не задана, то отправил сервис") # noqa
     notification_uid: str = Field(None, description="Идентификатор отправленного сообщения") # noqa
-    channel: str = Field(None, description="Канал отправки сообщения") # noqa
+    channel: str | None = Field(None, description="Канал отправки сообщения") # noqa
     # fmt: on
 
     def route_key(self):
