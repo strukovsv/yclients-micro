@@ -49,6 +49,8 @@ class Yclients(metaclass=MetaSingleton):
             }
             logger.debug(f"{self.headers_partner=}")
             # Авторизоваться в системе
+            logger.info(f'{self.imobis_url(url)=}')
+            logger.info(f'{body=}')
             try:
                 API_YCLIENTS_POST_REQUEST_CNT.inc()
                 r = await client.post(
@@ -69,6 +71,7 @@ class Yclients(metaclass=MetaSingleton):
                     pass
                 raise
             try:
+                logger.info(f'{r.json()=}')
                 result = r.json()
             except Exception as e:
                 API_YCLIENTS_REQUEST_ERROR_CNT.inc()
