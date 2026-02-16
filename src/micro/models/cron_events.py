@@ -561,14 +561,43 @@ class MidnightReached(CronBaseClass):
 class CronTriggeredEvent(HeaderEvent):
     """Запустилось событие cron"""
 
-    id: Optional[int] = Field(default=None, description="Уникальный идентификатор задачи")
-    name: Optional[str] = Field(default=None, description="Отображаемое имя задачи")
-    cron: Optional[str] = Field(default=None, description="Cron-выражение, определяющее расписание задачи (например, '0 9 * * *')",)
-    func: str = Field(description="Полный путь до вызываемой функции (например, 'app.jobs.send_email')")
-    args: Optional[Dict[str, Any]] = Field(default=None, description="Аргументы, передаваемые в функцию при выполнении задачи",)
-    last_fire_time: Optional[datetime] = Field(default=None, description="Дата и время последнего выполнения задачи")
-    next_fire_time: Optional[datetime] = Field(default=None, description="Дата и время следующего запланированного запуска задачи",)
-    timezone: Optional[str] = Field(default=None,  description="Timezone")
+    id: Optional[int] = Field(
+        default=None, description="Уникальный идентификатор задачи"
+    )
+    name: Optional[str] = Field(
+        default=None, description="Отображаемое имя задачи"
+    )
+    cron: Optional[str] = Field(
+        default=None,
+        description="Cron-выражение, определяющее расписание задачи (например, '0 9 * * *')",
+    )
+    func: str = Field(
+        description="Полный путь до вызываемой функции (например, 'app.jobs.send_email')"
+    )
+    args: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Аргументы, передаваемые в функцию при выполнении задачи",
+    )
+    last_fire_time: Optional[datetime] = Field(
+        default=None, description="Дата и время последнего выполнения задачи"
+    )
+    next_fire_time: Optional[datetime] = Field(
+        default=None,
+        description="Дата и время следующего запланированного запуска задачи",
+    )
+    timezone: Optional[str] = Field(default=None, description="Timezone")
 
     def route_key(self):
         return f"cron:{self.id}"
+
+
+class EmailCheckScheduled(CronBaseClass):
+    """Нужно проверить почту"""
+
+    ...
+
+
+class LegacyCronTriggeredEvent(CronBaseClass):
+    """schedule.do обработка"""
+
+    ...
