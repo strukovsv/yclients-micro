@@ -586,3 +586,9 @@ class LegacyCronTriggeredEvent(CronBaseClass):
     """schedule.do обработка"""
 
     ...
+
+
+class ChannelTestTriggered(CronBaseClass):
+    """Наступило время проверки входных каналов сообщений"""
+
+    ...
