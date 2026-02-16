@@ -94,7 +94,7 @@ class HeaderEvent(AvroBase):
             event=self.__class__.__name__,
             # идентификатор текущего события
             # uuid=config.PRODUCER_ID + "-" + now.isoformat(),
-            uuid=str(uuid.uuid4())
+            uuid=str(uuid.uuid4()),
             # Описание события
             desc=desc,
             # Версия события
