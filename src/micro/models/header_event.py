@@ -4,8 +4,8 @@ import logging
 
 import datetime
 from datetime import UTC
-
 from typing import Any, List, Optional, Union
+import uuid
 
 from pydantic_avro.base import AvroBase
 from pydantic import Field, BaseModel
@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 class Header(BaseModel):
     # fmt: off
     utc: str | None = Field(None, description="Время сообщения в формате UTC") # noqa
+    datetime: str | None = Field(None, description="Время сообщения") # noqa
     event: str | None = Field(None, description="Имя сообщения") # noqa
     uuid: str | None = Field(None, description="Идентификатор сообщения") # noqa
     parent: str | None = Field(None, description="Идентификатор родительского сообщения") # noqa
@@ -87,10 +88,13 @@ class HeaderEvent(AvroBase):
         self.header = Header(
             # Время события в utc
             utc=now_utc.isoformat(),
+            # Локальное время события
+            datetime=now.isoformat(),
             # Тип события, как название класса
             event=self.__class__.__name__,
             # идентификатор текущего события
-            uuid=config.PRODUCER_ID + "-" + now.isoformat(),
+            # uuid=config.PRODUCER_ID + "-" + now.isoformat(),
+            uuid=str(uuid.uuid4())
             # Описание события
             desc=desc,
             # Версия события
