@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 import datetime
+from datetime import UTC
 
 from typing import Any, List, Optional, Union
 
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class Header(BaseModel):
     # fmt: off
+    utc: str | None = Field(None, description="Время сообщения в формате UTC") # noqa
     event: str | None = Field(None, description="Имя сообщения") # noqa
     uuid: str | None = Field(None, description="Идентификатор сообщения") # noqa
     parent: str | None = Field(None, description="Идентификатор родительского сообщения") # noqa
@@ -80,8 +82,11 @@ class HeaderEvent(AvroBase):
         """
         # Дата сообщения
         now = datetime.datetime.now()
+        now_utc = datetime.datetime.now(UTC)
         # Заголовок сообщения
         self.header = Header(
+            # Время события в utc
+            utc=now_utc.isoformat(),
             # Тип события, как название класса
             event=self.__class__.__name__,
             # идентификатор текущего события
@@ -95,7 +100,9 @@ class HeaderEvent(AvroBase):
         )
         # Получатель сообщения
         self.addresse = addresse or Addresse(
-            client_id=client_id, chat_id=chat_id, channel=channel,
+            client_id=client_id,
+            chat_id=chat_id,
+            channel=channel,
         )
         # Сформировать атрибут для цепочки сообщений
         # Если задан родитель в отправке, то из него взять значение
