@@ -763,10 +763,10 @@ class Yclients(metaclass=MetaSingleton):
         """Получить из fromni список каналов для отправки"""
         if not self.fromni_channels:
             connections = await self.imobis_post(url="/channels/connections")
+            # logger.info(f'{connections=}')
             self.fromni_channels = []
             # Порядок отправки сообщения по каналам
-            # for name in ["telegram", "telegram-web", "whatsapp"]:
-            for name in ["max", "telegram", "telegram-web"]:
+            for name in ["max", "telegram", "telegram-web", "vk"]:
                 channel_connections = connections.get("data", {}).get(name, [])
                 channel_ids = [conn.get("id") for conn in channel_connections]
                 self.fromni_channels.append(
@@ -799,6 +799,7 @@ class Yclients(metaclass=MetaSingleton):
 {message}"""
             body["message"] = {"text": text}
             body["channels"] = await self.get_fromni_channels()
+            # logger.info(f'{body["channels"]=}')
             result = await self.imobis_post(
                 url="/notifications/send",
                 body=body,
