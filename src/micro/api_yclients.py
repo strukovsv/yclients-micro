@@ -766,7 +766,7 @@ class Yclients(metaclass=MetaSingleton):
             self.fromni_channels = []
             # Порядок отправки сообщения по каналам
             # for name in ["telegram", "telegram-web", "whatsapp"]:
-            for name in ["telegram", "telegram-web"]:
+            for name in ["max", "telegram", "telegram-web"]:
                 channel_connections = connections.get("data", {}).get(name, [])
                 channel_ids = [conn.get("id") for conn in channel_connections]
                 self.fromni_channels.append(
