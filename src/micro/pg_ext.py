@@ -5,7 +5,7 @@ import jinja2
 from jinja2 import Environment, DictLoader, FileSystemLoader, ChoiceLoader
 
 from micro.utils import get_classic_rows
-from micro.pg import DB
+from micro.pg import DB, DB2
 from micro.metrics import PG_UPDATES
 from micro.sql_templates import constant_templates
 
@@ -82,7 +82,8 @@ async def returning(query, params=None):
 
 async def client2brief(client_id: int) -> str:
     """Клиент в номер телефона и имя, шифровано"""
-    info = await DB().fetchone("""
+    info = await DB().fetchone(
+        """
 select
     concat(
     case
@@ -93,18 +94,72 @@ select
     ' ',
     cl.js->>'display_name') as info
 from detail_clients cl
-where cl.id = %(client_id)s""", {"client_id": client_id})
+where cl.id = %(client_id)s""",
+        {"client_id": client_id},
+    )
     return info.get("info") if info else None
 
 
 async def client2full(client_id: int) -> str:
     """Клиент в номер телефона и имя, не шифровано"""
-    info = await DB().fetchone("""
+    info = await DB().fetchone(
+        """
 select
     concat(
     cl.js->>'phone',
     ' ',
     cl.js->>'display_name') as info
 from detail_clients cl
-where cl.id = %(client_id)s""", {"client_id": client_id})
+where cl.id = %(client_id)s""",
+        {"client_id": client_id},
+    )
     return info.get("info") if info else None
+
+
+async def execute2(connect_string: str, query: str, params=None):
+    return await DB2().execute(connect_string, query, params)
+
+
+async def fetchall2(connect_string: str, query: str, params=None):
+    return await DB2().fetchall(connect_string, query, params)
+
+
+async def fetchone2(connect_string: str, query: str, params=None):
+    return await DB2().fetchone(connect_string, query, params)
+
+
+async def returning2(connect_string: str, query: str, params=None):
+    return await DB2().returning(connect_string, query, params)
+
+
+async def select2(connect_string: str, template: str, **kwarg):
+    template_path = kwarg.get("template_path", None)
+    if template_path:
+        loaders = [
+            DictLoader(constant_templates),
+            FileSystemLoader(template_path),
+        ]
+        sql_template = jinja2.Environment(loader=ChoiceLoader(loaders))
+        sql_text = sql_template.get_template(template).render(**kwarg)
+    else:
+        loaders = [DictLoader(constant_templates), FileSystemLoader("sql/")]
+        sql = jinja2.Environment(loader=ChoiceLoader(loaders))
+        sql_text = sql.get_template(template).render(**kwarg)
+    # for line in sql_text.split("\n"):
+    #     logger.info(f"{line}")
+    data = await DB2().fetchall(
+        connect_string, sql_text, kwarg.get("params", {})
+    )
+    # Перечислить список выводимых колонок
+    columns = kwarg.get("columns", None)
+    if columns:
+        result = []
+        for row in data:
+            result.append(
+                {column: row[column] for column in columns if column in row}
+            )
+        data = result
+    if kwarg.get("as_classic_rows", None):
+        return get_classic_rows(data)
+    else:
+        return data
