@@ -117,7 +117,11 @@ class DB2(metaclass=MetaSingleton):
     async def get_pool(self, connect_string: str):
         """Получить pool соединения, если нет то создать"""
         # Если задана connect_string, иначе по умолчанию
-        _connect_string = connect_string or self.postgres_conninfo()
+        if connect_string:
+            _connect_string = connect_string
+        else:
+            _connect_string = self.postgres_conninfo()
+        logger.info(f'{connect_string=} {_connect_string=}')
         if self.pool.get(_connect_string) is None:
             # Подключить pool соединений с Postgres
             pool = psycopg_pool.AsyncConnectionPool(
