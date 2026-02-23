@@ -161,6 +161,9 @@ async def capture(message: object, events=None) -> None:
                 message_dict["attempt"] = message_dict.get("attempt", 0) + 1
                 message_dict["error_message"] = str(e)
                 message_dict["traceback"] = err.split("\n")
+                message_dict["first_error_at"] = message_dict.get(
+                    "first_error_at", datetime.datetime.now.isoformat()
+                )
                 # Отправить сообщение в топик ошибок сервиса
                 await KafkaProducer().send_kafka_topic(
                     topic=config.DLQ_WRITE_TOPIC, key=None, data=message_dict
