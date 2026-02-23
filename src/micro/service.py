@@ -1,7 +1,6 @@
 import asyncio
 import os
 import logging
-import json
 import datetime
 import traceback
 import time
@@ -43,7 +42,7 @@ class BackgroundRunner:
         async def cycle():
             try:
                 while True:
-                    if config.SRC_TOPIC:
+                    if config.SRC_TOPIC or config.SRC_PATTERN_TOPIC:
                         # Получить пакет сообщений из kafka
                         result = await KafkaConsumer().get_messages()
                         # Перебрать пакеты
@@ -51,20 +50,9 @@ class BackgroundRunner:
                             # Если есть сообщение
                             if messages:
                                 for message in messages:
-                                    # logger.info(f'{message=}')
-                                    # Добавить в сообщение время создания
-                                    message_dict = json.loads(message.value)
-                                    message_dict["create_event_timestamp"] = (
-                                        datetime.datetime.fromtimestamp(
-                                            message.timestamp / 1000
-                                        ).strftime("%d.%m.%Y %H:%M:%S")
+                                    await capture(
+                                        message=message, events=app.events
                                     )
-                                    # Обработать сообщение
-                                    # legasy
-                                    if app.events:
-                                        await app.events.do(message_dict)
-                                    # new
-                                    await capture(message_dict)
 
                                 await KafkaConsumer().partition_commit(
                                     tp, messages[-1].offset + 1
@@ -143,6 +131,7 @@ app.events = None
 @app.get("/threading")
 async def get_threading():
     return {"pid": os.getpid(), "thread": threading.get_ident()}
+
 
 @app.get("/envs")
 async def get_environments():

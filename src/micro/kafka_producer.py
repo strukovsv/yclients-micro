@@ -84,8 +84,10 @@ class KafkaProducer(metaclass=MetaSingleton):
             logger.info(f"connect producer kafka: {config.PRODUCER_KAFKA}")
             await self.producer.start()
 
-    async def send_kafka(self, key: any, data: dict) -> None:
-        """Отправить сообщение
+    async def send_kafka_topic_value(
+        self, topic: str, key: any, value
+    ) -> None:
+        """Отправить сообщение в заданный topic
 
         :param any key: route key
         :param dict data: сообщение
@@ -93,14 +95,35 @@ class KafkaProducer(metaclass=MetaSingleton):
         if not self.producer:
             await self.start()
         await self.producer.send_and_wait(
-            topic=config.DST_TOPIC,
-            key=str(key).encode(),
+            topic=topic,
+            key=str(key).encode() if key else None,
+            value=value,
+        )
+        # Отправлено событие в kafka
+        EVENTS_SENT_CNT.inc()
+
+    async def send_kafka_topic(self, topic: str, key: any, data: dict) -> None:
+        """Отправить сообщение в заданный topic
+
+        :param any key: route key
+        :param dict data: сообщение
+        """
+        await self.send_kafka_topic_value(
+            topic=topic,
+            key=key,
             value=json.dumps(
                 data, ensure_ascii=False, default=serialize_datetime
             ).encode(),
         )
-        # Отправлено событие в kafka
-        EVENTS_SENT_CNT.inc()
+
+    async def send_kafka(self, key: any, data: dict) -> None:
+        """Отправить сообщение в topic
+        по умолчанию
+
+        :param any key: route key
+        :param dict data: сообщение
+        """
+        await self.send_kafka_topic(topic=config.DST_TOPIC, key=key, data=data)
 
     async def stop(self):
         """Остановить kafka соединение и отпустить объект"""
@@ -124,9 +147,7 @@ class KafkaProducer(metaclass=MetaSingleton):
         # Тип сообщения
         js["event"] = event
         # Создать идентификатор сообщения
-        js["uuid"] = (
-            config.PRODUCER_ID + "-" + datetime.now().isoformat()
-        )
+        js["uuid"] = config.PRODUCER_ID + "-" + datetime.now().isoformat()
         # Сформировать атрибут для цепочки сообщений
         if "chain_uuid" not in js:
             js["chain_uuid"] = js["uuid"]

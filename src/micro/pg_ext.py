@@ -145,11 +145,13 @@ async def select2(connect_string: str, template: str, **kwarg):
         loaders = [DictLoader(constant_templates), FileSystemLoader("sql/")]
         sql = jinja2.Environment(loader=ChoiceLoader(loaders))
         sql_text = sql.get_template(template).render(**kwarg)
+    # logger.info(f"{connect_string=}")
     # for line in sql_text.split("\n"):
     #     logger.info(f"{line}")
     data = await DB2().fetchall(
         connect_string, sql_text, kwarg.get("params", {})
     )
+    # logger.info(f"{data=}")
     # Перечислить список выводимых колонок
     columns = kwarg.get("columns", None)
     if columns:

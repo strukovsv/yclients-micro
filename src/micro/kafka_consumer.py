@@ -1,4 +1,7 @@
 import logging
+import json
+import datetime
+import traceback
 
 from aiokafka import AIOKafkaConsumer
 
@@ -8,7 +11,9 @@ import micro.config as config
 
 from micro.schemes import Schema
 
-from .metrics import DO_EVENTS_CNT, WORKED_EVENTS_CNT
+from micro.kafka_producer import KafkaProducer
+
+from .metrics import DO_EVENTS_CNT, WORKED_EVENTS_CNT, EVENTS_SENT_DLQ_CNT
 
 logger = logging.getLogger(__name__)
 
@@ -18,14 +23,22 @@ class KafkaConsumer(metaclass=MetaSingleton):
     consumer: AIOKafkaConsumer = None
 
     async def start(self):
+        logger.info(f"connect consumer kafka: {config.CONSUMER_KAFKA}")
         self.consumer = AIOKafkaConsumer(
-            config.SRC_TOPIC,
             **config.CONSUMER_KAFKA,
             enable_auto_commit=config.KAFKA_ENABLE_AUTO_COMMIT,
             auto_offset_reset="earliest",
             retry_backoff_ms=10000,
         )
-        logger.info(f"connect consumer kafka: {config.CONSUMER_KAFKA}")
+        if config.SRC_TOPIC:
+            topics = [config.SRC_TOPIC]
+            if config.DLQ_READ_TOPIC:
+                topics.append(config.DLQ_READ_TOPIC)
+            self.consumer.subscribe(topics=topics)
+            logger.info(f"subscribe topics: {topics}")
+        if config.SRC_PATTERN_TOPIC:
+            self.consumer.subscribe(pattern=config.SRC_PATTERN_TOPIC)
+            logger.info(f"subscribe topic pattern: {config.SRC_PATTERN_TOPIC}")
         await self.consumer.start()
 
     async def get_messages(self):
@@ -46,7 +59,7 @@ class KafkaConsumer(metaclass=MetaSingleton):
 
     async def stop(self):
         """Остановить kafka соединение и отпустить объект"""
-        if config.SRC_TOPIC and self.consumer:
+        if (config.SRC_TOPIC or config.SRC_PATTERN_TOPIC) and self.consumer:
             await self.consumer.stop()
             del self.consumer
             self.consumer = None
@@ -54,6 +67,7 @@ class KafkaConsumer(metaclass=MetaSingleton):
 
 message_handlers: list = []
 event_handlers: list = []
+all_event_handlers: list = []
 
 
 def message_handler(event_name):
@@ -74,9 +88,16 @@ def event_handler(event_name):
     return decorator
 
 
-async def capture(message: dict) -> None:
-    # Входящее событие в сервис
-    DO_EVENTS_CNT.inc()
+def all_event_handler():
+
+    def decorator(handler):
+        all_event_handlers.append({"handler": handler})
+        return handler
+
+    return decorator
+
+
+async def capture_dict(message: dict) -> None:
     # Получить имя события
     event_name = message.get("header", {}).get("event", None) or message.get(
         "event", None
@@ -108,3 +129,51 @@ async def capture(message: dict) -> None:
                 WORKED_EVENTS_CNT.inc()
             else:
                 raise Exception(f"Не найдена model {event_name}")
+
+
+async def capture(message: object, events=None) -> None:
+    # Входящее событие в сервис
+    DO_EVENTS_CNT.inc()
+    # Перехватить все входящие сообщения
+    for handler in all_event_handlers:
+        # Вызвать функцию обработчик события, передать на вход объект
+        await handler["handler"](message)
+        WORKED_EVENTS_CNT.inc()
+    if message_handlers or event_handlers:
+        # Добавить в сообщение время создания
+        message_dict = json.loads(message.value)
+        message_dict["create_event_timestamp"] = (
+            datetime.datetime.fromtimestamp(message.timestamp / 1000).strftime(
+                "%d.%m.%Y %H:%M:%S"
+            )
+        )
+        # Обработать сообщение
+        if config.DLQ_WRITE_TOPIC:
+            try:
+                # legasy
+                if events:
+                    await events.do(message_dict)
+                # new
+                await capture_dict(message_dict)
+            except Exception as e:
+                err = traceback.format_exc()
+                # Добавить в текущее сообщение данные об ошибке
+                message_dict["attempt"] = message_dict.get("attempt", 0) + 1
+                message_dict["error_message"] = str(e)
+                message_dict["traceback"] = err.split("\n")
+                # Отправить сообщение в топик ошибок сервиса
+                await KafkaProducer().send_kafka_topic(
+                    topic=config.DLQ_WRITE_TOPIC, key=None, data=message_dict
+                )
+                # Метрика !!!
+                EVENTS_SENT_DLQ_CNT.inc()
+                logger.error(err)
+                logger.info(
+                    f"sended error message to topic {config.DLQ_WRITE_TOPIC}"
+                )
+        else:
+            # legasy
+            if events:
+                await events.do(message_dict)
+            # new
+            await capture_dict(message_dict)

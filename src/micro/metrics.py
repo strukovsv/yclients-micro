@@ -26,6 +26,10 @@ EVENTS_SENT_CNT = Counter(
     "events_sent_cnt", "Count of events sent from the service"
 )
 
+EVENTS_SENT_DLQ_CNT = Counter(
+    "events_sent_dql_cnt", "Count of events sent into dlq topic from the service"
+)
+
 PG_EXECUTE_CNT = Counter(
     "pg_execute_cnt", "Count executes postgres local base"
 )
