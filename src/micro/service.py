@@ -5,11 +5,18 @@ import datetime
 import traceback
 import time
 import threading
+import psutil
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse
-from starlette_exporter import PrometheusMiddleware, handle_metrics
+from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
+
+from prometheus_client import (
+    CollectorRegistry,
+    multiprocess,
+    generate_latest,
+)
 
 import sentry_sdk
 
@@ -23,6 +30,13 @@ from micro.models.common_events import ServiceStarted, InfoEvent, Live
 from micro.telegram import send_start_service
 
 from micro.kafka_consumer import event_handler
+
+from micro.metrics_api import (
+    REQUEST_COUNT,
+    REQUEST_LATENCY,
+    PROCESS_MEMORY,
+    PROCESS_MEMORY2,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -122,8 +136,44 @@ app = FastAPI(
     openapi_url="/openapi.json" if os.environ.get("OPENAPI", None) else "",
 )
 
-app.add_middleware(PrometheusMiddleware)
-app.add_route("/metrics", handle_metrics)
+
+def memory_updater():
+
+    while True:
+        process = psutil.Process(os.getpid())
+        rss = process.memory_info().rss
+        PROCESS_MEMORY.set(rss)
+        PROCESS_MEMORY2.labels(pid=os.getpid()).set(rss)
+        time.sleep(10)
+
+
+threading.Thread(target=memory_updater, daemon=True).start()
+
+
+class MetricsMiddleware(BaseHTTPMiddleware):
+
+    async def dispatch(self, request, call_next):
+        start = time.time()
+        response = await call_next(request)
+        resp_time = time.time() - start
+        REQUEST_COUNT.labels(
+            request.method, request.url.path, response.status_code
+        ).inc()
+        REQUEST_LATENCY.labels(request.url.path).observe(resp_time)
+        return response
+
+
+app.add_middleware(MetricsMiddleware)
+
+
+@app.get("/metrics")
+async def metrics():
+    registry = CollectorRegistry()
+    multiprocess.MultiProcessCollector(registry)
+    return Response(generate_latest(registry), media_type="text/plain")
+
+
+# app.add_route("/metrics", metrics)
 
 app.events = None
 
