@@ -74,8 +74,8 @@ class KafkaProducer(metaclass=MetaSingleton):
 
     producer: AIOKafkaProducer = None
 
-    async def start(self):
-        if config.DST_TOPIC:
+    async def start(self, topic: str):
+        if topic:
             self.producer = AIOKafkaProducer(
                 **config.PRODUCER_KAFKA,
                 enable_idempotence=config.ENABLE_IDEMPOTENCE,
@@ -93,7 +93,7 @@ class KafkaProducer(metaclass=MetaSingleton):
         :param dict data: сообщение
         """
         if not self.producer:
-            await self.start()
+            await self.start(topic)
         await self.producer.send_and_wait(
             topic=topic,
             key=str(key).encode() if key else None,
@@ -127,7 +127,7 @@ class KafkaProducer(metaclass=MetaSingleton):
 
     async def stop(self):
         """Остановить kafka соединение и отпустить объект"""
-        if config.DST_TOPIC and self.producer:
+        if self.producer:
             await self.producer.stop()
             del self.producer
             self.producer = None
