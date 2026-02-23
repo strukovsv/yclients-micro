@@ -11,6 +11,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from starlette_exporter import PrometheusMiddleware, handle_metrics
 from contextlib import asynccontextmanager
 
+from prometheus_client import CollectorRegistry, multiprocess, generate_latest
+
 import sentry_sdk
 
 from micro.utils import hide_passwords
@@ -122,8 +124,17 @@ app = FastAPI(
     openapi_url="/openapi.json" if os.environ.get("OPENAPI", None) else "",
 )
 
-app.add_middleware(PrometheusMiddleware)
-app.add_route("/metrics", handle_metrics)
+registry = CollectorRegistry()
+
+
+def my_handle_metrics():
+    # Собирает данные из всех процессов prometheus_multiproc_dir
+    multiprocess.MultiProcessCollector(registry)
+    return generate_latest(registry)
+
+
+app.add_middleware(PrometheusMiddleware, app_name="api", registry=registry)
+app.add_route("/metrics", my_handle_metrics)
 
 app.events = None
 
