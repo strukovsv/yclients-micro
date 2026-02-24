@@ -161,7 +161,7 @@ async def capture(message: object, events=None) -> None:
                 message_dict["attempt"] = message_dict.get("attempt", 0) + 1
                 message_dict["error_message"] = str(e)
                 message_dict["traceback"] = err.split("\n")
-                now_isoformat = datetime.datetime.now.isoformat()
+                now_isoformat = datetime.datetime.now().isoformat()
                 message_dict["error_at"] = now_isoformat
                 message_dict["first_error_at"] = message_dict.get(
                     "first_error_at", now_isoformat

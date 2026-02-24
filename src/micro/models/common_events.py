@@ -62,6 +62,7 @@ class MessagePreparedForClient(HeaderEvent):
     type: str | None = Field(None, description="Тип отчета: html, markdown") # noqa
     plain: int | None = Field(None, description="Использовать моноширифный текст 1")  # noqa
     role: str | None = Field(None, description="Роль по умолчанию, если не задана, то отправил сервис") # noqa
+    is_mass_mailing: bool | None = Field(None, description="Массовая рекламная рассылка") # noqa
     # fmt: on
 
     def route_key(self):
