@@ -17,7 +17,9 @@ class Calendar(metaclass=MetaSingleton):
     def __init__(self):
         logger.info("init caldav")
 
-    async def get(self, calendar_name: str, date_from=None, date_to=None) -> list[dict]:
+    async def get(
+        self, calendar_name: str, date_from=None, date_to=None
+    ) -> list[dict]:
 
         def fill_event(component, calendar) -> dict[str, str]:
             # quite some data is tossed away here - like, the recurring rule.
@@ -30,8 +32,10 @@ class Calendar(metaclass=MetaSingleton):
             # Use year-month-day time instead ... https://xkcd.com/1179/
             cur["start"] = component.start
             cur["end"] = component.end
-            # For me the following line breaks because some imported calendar events
-            # came without dtstamp.  But dtstamp is mandatory according to the RFC
+            # For me the following line breaks because some
+            # imported calendar events
+            # came without dtstamp.
+            # But dtstamp is mandatory according to the RFC
             cur["datestamp"] = component.get("dtstamp").dt
             return cur
 
@@ -49,9 +53,7 @@ class Calendar(metaclass=MetaSingleton):
 
             logger.info(f"Календарь: {cal.name=}")
 
-            events = cal.date_search(
-                start=date_from, end=date_to
-            )
+            events = cal.date_search(start=date_from, end=date_to)
 
             result = []
             for event in events:

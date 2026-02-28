@@ -173,7 +173,7 @@ class InfoEvent(HeaderEvent):
     )  # noqa
     acc: str | None = Field(
         None,
-        description="Отправить системное сообщение клиентам с заданным доступом",
+        description="Отправить системное сообщение клиентам с заданным доступом",  # noqa
     )  # noqa
 
 

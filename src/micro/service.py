@@ -18,15 +18,13 @@ from prometheus_client import (
     generate_latest,
 )
 
-import sentry_sdk
-
 from micro.utils import hide_passwords
 import micro.config as config
 from micro.kafka_consumer import KafkaConsumer, capture
 from micro.kafka_producer import KafkaProducer
 from micro.status import Status
-from micro.schemes import Schema
-from micro.models.common_events import ServiceStarted, InfoEvent, Live
+from micro.schemes import Schema  # noqa
+from micro.models.common_events import InfoEvent, Live
 from micro.telegram import send_start_service
 
 from micro.kafka_consumer import event_handler
@@ -41,12 +39,6 @@ from micro.metrics_api import (
 logger = logging.getLogger(__name__)
 
 app = None
-
-sentry_sdk.init(
-    server_name=os.environ.get("SENTRY_SERVER", None),
-    max_breadcrumbs=10,
-    default_integrations=False,
-)
 
 
 class BackgroundRunner:

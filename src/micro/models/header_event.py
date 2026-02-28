@@ -4,10 +4,8 @@ import logging
 
 import datetime
 from datetime import UTC
-from typing import Any, List, Optional, Union
 import uuid
 
-from pydantic_avro.base import AvroBase
 from pydantic import Field, BaseModel
 
 from micro.kafka_producer import KafkaProducer
@@ -41,7 +39,7 @@ class Addresse(BaseModel):
     # fmt: on
 
 
-class HeaderEvent(AvroBase):
+class HeaderEvent(BaseModel):
     # fmt: off
     header: Header | None = Field(None, description="Заголовок сообщения") # noqa
     addresse: Addresse | None = Field(None, description="Получатель сообщения") # noqa
@@ -136,7 +134,8 @@ class PrintBaseEvent(HeaderEvent):
     """Базовые отчеты для сотрудника и для админа"""
 
     # fmt: off
-    # yesterday, now, tomorrow, prev-week, week, next-week, prev-month, month, next-month, YYYYMMDD
+    # yesterday, now, tomorrow, prev-week, week, next-week,
+    # prev-month, month, next-month, YYYYMMDD
     period: str = Field(..., description="Период формирования отчета")  # noqa
     staff: str | None = Field(None, description="Сотрудник")  # noqa
     # fmt: on

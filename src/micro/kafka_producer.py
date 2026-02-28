@@ -24,7 +24,8 @@ def serialize_datetime(obj: Any) -> str | float:
         - datetime.datetime → ISO формат с временем: "2025-08-11T14:30:00"
         - datetime.date      → ISO формат даты: "2025-08-11"
         - datetime.time      → ISO формат времени: "14:30:00"
-        - datetime.timedelta → float (секунды) ИЛИ строка в формате ISO 8601 (по желанию)
+        - datetime.timedelta → float (секунды) ИЛИ строка в формате
+          ISO 8601 (по желанию)
 
     Для использования с json.dumps:
         json.dumps(data, default=serialize_datetime)
@@ -43,7 +44,7 @@ def serialize_datetime(obj: Any) -> str | float:
         # Вариант 1: возвращаем общее количество секунд (float)
         return obj.total_seconds()
 
-        # --- Альтернатива: возвращать в формате ISO 8601 (например, "PT2H30M") ---
+        # Альтернатива: возвращать в формате ISO 8601 (например, "PT2H30M")
         # from isodate import duration_isoformat  # требует pip install isodate
         # return duration_isoformat(obj)
         #

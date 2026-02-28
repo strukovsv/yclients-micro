@@ -12,14 +12,9 @@
 from __future__ import annotations
 
 import logging
-import re
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
-import os
 import json
-
-from micro.render_ext import to_text
-from micro.models.common_events import Report, InfoEvent
 
 from pydantic import Field, ConfigDict
 
@@ -42,7 +37,8 @@ class CronBaseClass(HeaderEvent):
     """
     Базовый класс для всех событий, запускаемых по расписанию (cron).
 
-    Предоставляет структуру для хранения списка данных, которые будут обработаны.
+    Предоставляет структуру для хранения списка данных,
+    которые будут обработаны.
     """
 
     data: Dict[str, Any]
@@ -107,7 +103,8 @@ class Workflow(CronBaseClass):
     def get_js(self) -> dict:
         """
         Получает текущий активный этап workflow из базы данных.
-        :return: Название текущего этапа или None, если этап не найден или данные некорректны.
+        :return: Название текущего этапа или None,
+        если этап не найден или данные некорректны.
         """
         if self._js:
             return self._js
@@ -243,7 +240,7 @@ WHERE event = %(event)s
                 delay_timedelta = delay
             else:
                 raise ValueError(
-                    "Параметр 'delay' должен быть строкой или объектом timedelta"
+                    "Параметр 'delay' должен быть строкой или объектом timedelta"  # noqa
                 )
         return delay_timedelta
 
@@ -339,7 +336,8 @@ INSERT INTO workflow_stages (
     ) -> None:
 
         logger.info(
-            f'Смена этапа "{self.capture_stage}" -> "{to_stage}", delay: "{delay} {time_str}"'
+            f'Смена этапа "{self.capture_stage}" '
+            + f'-> "{to_stage}", delay: "{delay} {time_str}"'
         )
 
         # SQL-операции: завершить текущий этап(ы)
@@ -453,36 +451,14 @@ INSERT INTO workflow_stages (
 
 class ScheduleReport(CronBaseClass):
     """
-    Событие для формирования и отправки отчетов клиентам или администраторам по расписанию.
+    Событие для формирования и отправки отчетов клиентам
+    или администраторам по расписанию.
 
     Данные в `self.data` должны содержать информацию для генерации отчета:
     - получатели (chat_id, client_id)
     - шаблоны сообщений
     - параметры для рендеринга
     """
-
-
-# class Workflow(WorkflowBase):
-#     """Базовый workflow"""
-
-
-# class ReactivationClient(WorkflowBase):
-#     """
-#     Workflow для реактивации спящих клиентов студии йоги.
-
-#     Этапы воронки:
-#         1. Мягкое напоминание
-#         2. Персональное предложение
-#         3. Срочное напоминание
-#         4. Прощальное сообщение
-#         5. Анализ и сегментация
-
-#     Каждый этап автоматически запускает следующий с задержкой (например, "30s", "2d").
-#     """
-
-
-# class FirstClientVisit(WorkflowBase):
-#     """Отправить сообщение клиенту о первой тренировке"""
 
 
 class OpenWorkflow(CronBaseClass):

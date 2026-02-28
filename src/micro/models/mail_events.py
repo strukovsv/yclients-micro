@@ -1,7 +1,5 @@
 from __future__ import annotations
 import logging
-from typing import Any, List, Optional, Union
-from datetime import datetime
 from pydantic import Field
 import re
 
@@ -37,7 +35,7 @@ class MailMessage(HeaderEvent):
         :param str substr: вхождение
         :return bool: входит подстрока
         """
-        return self.subject.lower().replace("\xa0", " ").find(text.lower()) >= 0
+        return self.subject.lower().replace("\xa0", " ").find(text.lower()) >= 0 # noqa
 
     def text(self) -> str:
         """Получить plain тело как одна строка.

@@ -35,6 +35,9 @@ async def send_telegram(message: str, success: bool = None):
     :param bool success: отправить хороший или плохой смайлик
     """
     if config.TELEGRAM_TOKEN and config.TELEGRAM_CHAT:
+        url = (
+            f"https://api.telegram.org/bot{config.TELEGRAM_TOKEN}/sendMessage"
+        )
         for chat_id in (
             config.TELEGRAM_CHAT
             if isinstance(config.TELEGRAM_CHAT, list)
@@ -42,13 +45,11 @@ async def send_telegram(message: str, success: bool = None):
         ):
             if chat_id:
                 emoji = (
-                    ("😀" if success else "☹")
-                    if success is not None
-                    else None
+                    ("😀" if success else "☹") if success is not None else None
                 )
                 for message in [emoji, message]:
                     await get_request(
-                        url=f"https://api.telegram.org/bot{config.TELEGRAM_TOKEN}/sendMessage",
+                        url=url,
                         params={
                             "chat_id": chat_id,
                             "text": message,
@@ -60,6 +61,6 @@ async def send_telegram(message: str, success: bool = None):
 async def send_start_service(service_name: str):
     date = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
     await send_telegram(
-        message="\U0001F680"
+        message="\U0001f680"
         + f"{date} : service <b>{service_name}</b> launched !"
     )

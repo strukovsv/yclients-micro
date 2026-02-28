@@ -5,7 +5,6 @@ import datetime
 import os
 
 from micro.singleton import MetaSingleton
-import micro.utils
 
 import micro.config as config
 
@@ -49,8 +48,6 @@ class Yclients(metaclass=MetaSingleton):
             }
             logger.debug(f"{self.headers_partner=}")
             # Авторизоваться в системе
-            logger.info(f'{self.imobis_url(url)=}')
-            logger.info(f'{body=}')
             try:
                 API_YCLIENTS_POST_REQUEST_CNT.inc()
                 r = await client.post(
@@ -71,7 +68,6 @@ class Yclients(metaclass=MetaSingleton):
                     pass
                 raise
             try:
-                logger.info(f'{r.json()=}')
                 result = r.json()
             except Exception as e:
                 API_YCLIENTS_REQUEST_ERROR_CNT.inc()
@@ -96,7 +92,6 @@ class Yclients(metaclass=MetaSingleton):
                     "Content-Type": "application/json",
                     "Accept": "application/vnd.yclients.v2+json",
                 }
-                logger.info(f"{self.headers_partner=}")
                 # Авторизоваться в системе
                 try:
                     API_YCLIENTS_POST_REQUEST_CNT.inc()
@@ -109,7 +104,6 @@ class Yclients(metaclass=MetaSingleton):
                         },
                         timeout=10.0,
                     )
-                    # logger.info(f'auth: {r.content}')
                 except Exception as e:
                     API_YCLIENTS_REQUEST_ERROR_CNT.inc()
                     # Получить user token
@@ -168,7 +162,6 @@ class Yclients(metaclass=MetaSingleton):
                 params["count"] = page_count
                 # Зафиксировать время запроса
                 start = datetime.datetime.now()
-                # logger.info(f"{self.url(url)=} {params=}")
                 # Запросить в API
                 for i in range(0, 4):
                     try:
@@ -189,7 +182,6 @@ class Yclients(metaclass=MetaSingleton):
                                 json=params,
                                 timeout=10.0,
                             )
-                        # logger.info(f'{r.content=}')
                         js = r.json()
                         if not js["success"]:
                             raise Exception(js["meta"]["message"])
@@ -279,13 +271,11 @@ class Yclients(metaclass=MetaSingleton):
                     page += 1
                 # Зафиксировать время запроса
                 start = datetime.datetime.now()
-                # logger.info(f"{self.url(url)=} {params=}")
                 # Запросить в API
                 for i in range(0, 4):
                     try:
                         __url__ = self.url(url)
                         API_YCLIENTS_POST_REQUEST_CNT.inc()
-                        logger.info(f"{__url__=} {params=}")
                         try:
                             r = await client.post(
                                 self.imobis_url(url),
@@ -302,7 +292,8 @@ class Yclients(metaclass=MetaSingleton):
                             )
                             raise
                         except httpx.NetworkError as e:
-                            # Включает: ConnectError, ReadError, WriteError и др.
+                            # Включает: ConnectError, ReadError,
+                            # WriteError и др.
                             logger.error(
                                 f"Сетевая ошибка при обращении к fromni: {e}"
                             )
@@ -331,9 +322,6 @@ class Yclients(metaclass=MetaSingleton):
                     except Exception as e:
                         # Получить user token
                         if i < 3:
-                            logger.info(
-                                f'attempt: "{i}", error: "{e}", url: "{__url__}"'  # noqa
-                            )
                             # await asyncio.sleep(10)
                             await asyncio.sleep(10)
                             continue
@@ -381,7 +369,6 @@ class Yclients(metaclass=MetaSingleton):
 
     async def write_transaction(self, params: dict):
         if self.debug:
-            logger.info(f'debug "write_transaction" with params: {params}')
             return {
                 "success": False,
                 "meta": {
@@ -402,7 +389,6 @@ class Yclients(metaclass=MetaSingleton):
 
     async def card_set_period(self, params: dict):
         if self.debug:
-            logger.info(f'debug "card_set_period" with params: {params}')
             return {"success": True}
         else:
             _headers = await self.auth()
@@ -423,7 +409,6 @@ class Yclients(metaclass=MetaSingleton):
 
     async def delete_activity(self, params: dict):
         if self.debug:
-            logger.info(f'debug "delete_activity" with params: {params}')
             return {"success": True}
         else:
             _headers = await self.auth()
@@ -439,7 +424,6 @@ class Yclients(metaclass=MetaSingleton):
 
     async def write_activity(self, params: dict):
         if self.debug:
-            logger.info(f'debug "write_activity" with params: {params}')
             return {"success": True}
         else:
             _headers = await self.auth()
@@ -763,7 +747,6 @@ class Yclients(metaclass=MetaSingleton):
         """Получить из fromni список каналов для отправки"""
         if not self.fromni_channels:
             connections = await self.imobis_post(url="/channels/connections")
-            # logger.info(f'{connections=}')
             self.fromni_channels = []
             # Порядок отправки сообщения по каналам
             for name in ["max", "telegram", "telegram-web", "vk"]:
@@ -799,7 +782,6 @@ class Yclients(metaclass=MetaSingleton):
 {message}"""
             body["message"] = {"text": text}
             body["channels"] = await self.get_fromni_channels()
-            # logger.info(f'{body["channels"]=}')
             result = await self.imobis_post(
                 url="/notifications/send",
                 body=body,

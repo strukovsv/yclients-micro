@@ -5,7 +5,7 @@ from psycopg.rows import dict_row
 from micro.singleton import MetaSingleton
 
 import micro.config as config
-from micro.metrics import PG_EXECUTE_CNT, PG_FETCHALL_CNT, PG_UPDATES
+from micro.metrics import PG_EXECUTE_CNT, PG_FETCHALL_CNT
 
 logger = logging.getLogger(__name__)
 

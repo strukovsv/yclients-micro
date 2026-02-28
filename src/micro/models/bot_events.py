@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, List, Optional
+from typing import List
 
-from pydantic_avro.base import AvroBase
 from pydantic import Field, BaseModel
 
 import micro.pg_ext as base
@@ -93,10 +92,10 @@ class TelegramUser(BaseModel):
             # Запомнить нового пользователя в таблице
             await base.execute(
                 """
-        insert into passwd
-        (name, first_name, last_name, telegram_id, telegram_username, access)
-        values
-        (%(username)s, %(first_name)s, %(last_name)s, %(id)s, %(username)s, 'user')
+insert into passwd
+(name, first_name, last_name, telegram_id, telegram_username, access)
+values
+(%(username)s, %(first_name)s, %(last_name)s, %(id)s, %(username)s, 'user')
         """,
                 self.__dict__,
             )
@@ -107,9 +106,10 @@ class TelegramUser(BaseModel):
         """Найти пользователей telegram с заданным уровнем доступа"""
         result = await base.fetchall(
             f"""
-    select p.telegram_id
-    from passwd p
-    where concat(',', lower(replace(p.access, ' ', '')), ',') like '%,{access.strip().lower()},%'""",
+select p.telegram_id
+from passwd p
+where concat(',', lower(replace(p.access, ' ', '')), ',')
+like '%,{access.strip().lower()},%'""",
         )
         logger.info(f"get_chat_id_for_access: {result=}")
         return [int(user["telegram_id"]) for user in result]
@@ -290,7 +290,8 @@ class BotSendMenu(BotSendBase):
         :param list items: список элементов меню (title, callback_data)
         :param str query: Текст запроса меню, defaults to None
         :param int row_width: Кол-во элементов в строке, defaults to None
-        :param str chain_uuid: идентификатор цепочки сообщений, defaults to None
+        :param str chain_uuid: идентификатор цепочки сообщений,
+          defaults to None
         """
         # Создать сообщение отправить меню
         await BotSendMenu(
