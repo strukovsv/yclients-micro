@@ -3,7 +3,11 @@ from __future__ import annotations
 import logging
 import os
 
-from micro.render_ext import to_text
+try:
+    from micro.render_ext import to_text
+except Exception:
+    pass
+
 from micro.pg_ext import fetchall
 from micro.models.common_events import Report, InfoEvent
 
@@ -108,12 +112,14 @@ where ws.id = %(id)s""",
 async def send_message(
     workflow: str, stage: str, data: dict, debug: bool = False
 ) -> None:
-    """Отправить сообщения по шаблонам с постфиксами ролей и произвольными числовыми идентификаторами
+    """Отправить сообщения по шаблонам с постфиксами ролей и
+    произвольными числовыми идентификаторами
 
     :param str workflow: имя workflow (каталог шаблонов)
     :param str stage: этап обработки (часть имени файла)
     :param dict  данные для рендеринга шаблона
-    :param bool debug: включить режим отладки для клиентских шаблонов, defaults to False
+    :param bool debug: включить режим отладки для клиентских шаблонов,
+      defaults to False
     """
     for postfix in ["client", "manager", "admin", "attention"]:
         template = f"{workflow}/{stage}_{postfix}.txt".lower()

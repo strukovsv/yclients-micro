@@ -4,10 +4,8 @@ import logging
 
 import datetime
 from datetime import UTC
-from typing import Any, List, Optional, Union
 import uuid
 
-from pydantic_avro.base import AvroBase
 from pydantic import Field, BaseModel
 
 from micro.kafka_producer import KafkaProducer
@@ -18,6 +16,21 @@ logger = logging.getLogger(__name__)
 
 
 class Header(BaseModel):
+    """
+    Заголовок события Kafka — метаинформация для трассировки и маршрутизации.
+
+    Attributes:
+        utc: Время события в UTC (ISO 8601).
+        datetime: Локальное время события (ISO 8601).
+        event: Имя класса-события, используется как тип сообщения.
+        uuid: Уникальный идентификатор события (UUID v4).
+        parent: UUID родительского события (для цепочек вызовов).
+        root: UUID корневого события в цепочке (сквозной trace_id).
+        desc: Человеко-читаемое описание события.
+        version: Версия схемы события (semver).
+        source: Идентификатор источника (PRODUCER_ID из конфига).
+    """
+
     # fmt: off
     utc: str | None = Field(None, description="Время сообщения в формате UTC") # noqa
     datetime: str | None = Field(None, description="Время сообщения") # noqa
@@ -32,7 +45,14 @@ class Header(BaseModel):
 
 
 class Addresse(BaseModel):
-    """Адрессат сообщения"""
+    """
+    Адресат сообщения — определяет канал доставки.
+
+    Attributes:
+        client_id: ID клиента для отправки через Yclients SMS.
+        chat_id: ID чата для отправки через Telegram.
+        channel: ID канала/группы для отправки через Telegram.
+    """
 
     # fmt: off
     client_id: str | None = Field(None, description="Получатель сообщения в yclients SMS") # noqa
@@ -41,13 +61,32 @@ class Addresse(BaseModel):
     # fmt: on
 
 
-class HeaderEvent(AvroBase):
+class HeaderEvent(BaseModel):
+    """
+    Базовый класс события с заголовком и адресатом.
+
+    Предоставляет методы для формирования метаданных, маршрутизации
+    и отправки в Kafka. Используется как основа для конкретных событий.
+
+    Attributes:
+        header: Метаинформация события (экземпляр Header).
+        addresse: Адресат доставки (экземпляр Recipient).
+    """
+
     # fmt: off
     header: Header | None = Field(None, description="Заголовок сообщения") # noqa
     addresse: Addresse | None = Field(None, description="Получатель сообщения") # noqa
     # fmt: on
 
     def route_key(self):
+        """
+        Формирует ключ маршрутизации для Kafka topic partition.
+
+        Priority: chat_id → client_id → channel → PRODUCER_ID → "na".
+
+        Returns:
+            str: Строковый ключ для шардирования.
+        """
         return (
             self.addresse.chat_id
             or self.addresse.client_id
@@ -71,29 +110,43 @@ class HeaderEvent(AvroBase):
         channel: str = None,
         parent: object = None,
     ) -> None:
-        """Отправить объект в поток
+        """
+        Отправляет событие в Kafka с авто-генерацией заголовка.
 
-        :param HeaderEvent obj: объект
-        :param any key: route key для topic, defaults to None
-        :param str chain_uuid: цепочка сообщений
-        :param str desc: описание события
-        :param str version: версия события
-        :param str client_id: отправить сообщение через Yclients SMS
-        :param str chat_id: отправить сообщение через telegram
+        Формирует Header (uuid, timestamps, trace-chain) и Recipient,
+        затем сериализует объект и отправляет через KafkaProducer.
+
+        Args:
+            key: Ключ маршрутизации (переопределяет route_key()).
+            desc: Описание события (перезаписывает поле в header).
+            version: Версия схемы события.
+            client_id: ID клиента для Yclients SMS (альтернатива addresse).
+            addresse: Готовый объект Recipient
+              (приоритет над отдельными полями).
+            chat_id: ID Telegram-чата (если не задан addresse).
+            channel: ID Telegram-канала (если не задан addresse).
+            parent: Родительское событие для построения цепочки (parent/root).
+
+        Returns:
+            None
+
+        Side Effects:
+            - Отправляет сообщение в Kafka.
+            - Логгирует факт отправки.
+            - Модифицирует self.header и self.addresse.
         """
         # Дата сообщения
-        now = datetime.datetime.now()
         now_utc = datetime.datetime.now(UTC)
+        now_local = datetime.datetime.now()
         # Заголовок сообщения
         self.header = Header(
             # Время события в utc
             utc=now_utc.isoformat(),
             # Локальное время события
-            datetime=now.isoformat(),
+            datetime=now_local.isoformat(),
             # Тип события, как название класса
             event=self.__class__.__name__,
             # идентификатор текущего события
-            # uuid=config.PRODUCER_ID + "-" + now.isoformat(),
             uuid=str(uuid.uuid4()),
             # Описание события
             desc=desc,
@@ -108,6 +161,7 @@ class HeaderEvent(AvroBase):
             chat_id=chat_id,
             channel=channel,
         )
+        # Строим цепочку сообщений (distributed tracing)
         # Сформировать атрибут для цепочки сообщений
         # Если задан родитель в отправке, то из него взять значение
         self.header.root = (
@@ -122,21 +176,24 @@ class HeaderEvent(AvroBase):
             if parent and hasattr(parent.header, "uuid")
             else None
         )
-        # logger.info(f'{parent=}')
-        # logger.info(f'{self.header=}')
         # Отправить сообщение, если не задан ключ,
         # то взять от даты псевдослучайное число
         await KafkaProducer().send_kafka(
             key=key or self.route_key(), data=self.dict()
         )
-        logger.info(f'send object "{self.header.event}"')
+        logger.info(
+            f'send event "{self.header.event}" with uuid={self.header.uuid}'
+        )
 
 
 class PrintBaseEvent(HeaderEvent):
-    """Базовые отчеты для сотрудника и для админа"""
+    """ Базовое событие для генерации отчетов (сотрудник/админ).
 
+    Содержит параметры периода и привязки к сотруднику для фильтрации.
+    period: yesterday, now, tomorrow, prev-week, week, next-week,
+            prev-month, month, next-month, YYYYMMDD
+    """
     # fmt: off
-    # yesterday, now, tomorrow, prev-week, week, next-week, prev-month, month, next-month, YYYYMMDD
     period: str = Field(..., description="Период формирования отчета")  # noqa
     staff: str | None = Field(None, description="Сотрудник")  # noqa
     # fmt: on

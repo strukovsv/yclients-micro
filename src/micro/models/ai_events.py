@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, List, Optional, Union
 
 from pydantic import Field
 
@@ -72,7 +71,7 @@ class WillBeAbsent(AiEvent):
     # fmt: off
     absence_start: datetime | None = Field(
         default=None,
-        description="Дата начала периода отсутствия клиента (например, отпуск)",
+        description="Дата начала периода отсутствия клиента (например, отпуск)", # noqa
     )
     absence_end: datetime | None = Field(
         default=None, description="Дата окончания периода отсутствия клиента"
@@ -86,7 +85,7 @@ class AddClientToBlacklist(AiEvent):
     # fmt: off
     blacklist_start: datetime | None = Field(
         default=None,
-        description="Дата начала периода отсутствия клиента (например, отпуск)",
+        description="Дата начала периода отсутствия клиента (например, отпуск)", # noqa
     )
     blacklist_stop: datetime | None = Field(
         default=None, description="Дата окончания периода отсутствия клиента"

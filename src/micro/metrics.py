@@ -27,7 +27,8 @@ EVENTS_SENT_CNT = Counter(
 )
 
 EVENTS_SENT_DLQ_CNT = Counter(
-    "events_sent_dql_cnt", "Count of events sent into dlq topic from the service"
+    "events_sent_dql_cnt",
+    "Count of events sent into dlq topic from the service",
 )
 
 PG_EXECUTE_CNT = Counter(

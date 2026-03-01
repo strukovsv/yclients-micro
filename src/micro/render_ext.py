@@ -4,7 +4,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import micro.render as render
-from micro.pg_ext import fetchone, fetchall, select
+from micro.pg_ext import fetchall, select
 from micro.utils import hide_passwords, mask_phone_recursive
 
 logger = logging.getLogger(__name__)

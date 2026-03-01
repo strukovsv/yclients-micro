@@ -31,11 +31,14 @@ class Events:
                     event_split = event_name.split(".")
                     # Кратко распечатать 200 символов json
                     js_example = {
-                        key: value for key, value in js.items() if key != "event"
+                        key: value
+                        for key, value in js.items()
+                        if key != "event"
                     }
                     sjs = f"{js_example}"[0:200]
                     logger.info(
-                        f'arrived message "{event_name}" to func: "{name}" : "{sjs}"'
+                        f'arrived message "{event_name}" '
+                        + f'to func: "{name}" : "{sjs}"'
                     )
                     await func(
                         [

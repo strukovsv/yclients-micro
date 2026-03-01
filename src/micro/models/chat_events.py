@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional, Union
-
 from pydantic import Field
 
 from micro.models.header_event import HeaderEvent

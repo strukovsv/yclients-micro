@@ -24,7 +24,6 @@ class Report(HeaderEvent):
     ).send(
         client_id=obj.client_id
     )
-
     """
 
     # fmt: off
@@ -144,10 +143,10 @@ class MessageReceivedFromClient(HeaderEvent):
 class ServiceStarted(HeaderEvent):
     """Сообщение о запуске сервиса"""
 
-    service_name: str = Field(
-        ..., description="Имя сервиса: sync, worker, bi, bot и т.д."
-    )  # noqa
+    # fmt: off
+    service_name: str = Field(..., description="Имя сервиса: sync, worker, bi, bot и т.д.")  # noqa
     date: str
+    # fmt: on
 
 
 class InfoEvent(HeaderEvent):
@@ -163,62 +162,50 @@ class InfoEvent(HeaderEvent):
     worker: info.report.card.update
     """
 
-    text: Union[str, List[str]] = Field(
-        ...,
-        description="Текст информационного сообщения, строка или массив строк",
-    )  # noqa
-    format: str | None = Field(
-        None,
-        description="Формат сообщения. Markdown (по умолчанию) или html",
-    )  # noqa
-    acc: str | None = Field(
-        None,
-        description="Отправить системное сообщение клиентам с заданным доступом",
-    )  # noqa
+    # fmt: off
+    text: Union[str, List[str]] = Field(..., description="Текст информационного сообщения, строка или массив строк")  # noqa
+    format: str | None = Field(None, description="Формат сообщения. Markdown (по умолчанию) или html")  # noqa
+    acc: str | None = Field(None, description="Отправить системное сообщение клиентам с заданным доступом")  # noqa
+    # fmt: on
 
 
 class ErrorEvent(HeaderEvent):
     """Отправлено сообщение об ошибке"""
 
-    text: Union[str, List[str]] = Field(
-        ..., description="Текст сообщения об ошибке, строка или массив строк"
-    )  # noqa
+    # fmt: off
+    text: Union[str, List[str]] = Field(..., description="Текст сообщения об ошибке, строка или массив строк")  # noqa
+    # fmt: on
 
 
 class Live(HeaderEvent):
     """Отправить сервисам запрос ответить жив он"""
 
-    pass
+    ...
 
 
 class Webhook(HeaderEvent):
 
+    # fmt: off
     body: dict = Field(..., description="Перехваченное сообщение")  # noqa
+    # fmt: on
 
 
 class WebhookFromniReceived(Webhook):
     """Входящие, перехваченное сообщение от клиента Fromni"""
 
-    # def route_key(self):
-    #     key = self.body.get("data", {}).get("contact", {}).get("phone")
-    #     if not key:
-    #         for data in self.body.get("data", {}).get("docs", []):
-    #             key = data.get("data", {}).get("phone")
-    #     return f'{self.body.get("type")}::{key}'
+    ...
 
 
 class WebhookCrmReceived(Webhook):
+    """Webhook от сервиса CRM"""
 
-    pass
-    # def route_key(self):
-    #     return None
+    ...
 
 
 class WebhookYclientsReceived(Webhook):
+    """Webhook от yclients"""
 
-    pass
-    # def route_key(self):
-    #     return None
+    ...
 
 
 class ReportRequestedType(StrEnum):

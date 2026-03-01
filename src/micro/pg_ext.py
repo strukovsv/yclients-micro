@@ -1,8 +1,10 @@
 import logging
 
-import jinja2
-
-from jinja2 import Environment, DictLoader, FileSystemLoader, ChoiceLoader
+try:
+    import jinja2
+    from jinja2 import DictLoader, FileSystemLoader, ChoiceLoader
+except Exception:
+    pass
 
 from micro.utils import get_classic_rows
 from micro.pg import DB, DB2

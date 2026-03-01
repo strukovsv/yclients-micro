@@ -11,4 +11,4 @@ def test1():
     message["data"] = {"a": 20}
     result = list(dictdiffer.diff(message["old"], message["data"]))
     patched = dictdiffer.patch(result, message["old"])
-    logger.info(f"{result=}")
+    logger.info(f"{result=} {patched=}")
