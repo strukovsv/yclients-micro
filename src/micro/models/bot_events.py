@@ -13,22 +13,6 @@ from micro.models.header_event import HeaderEvent
 logger = logging.getLogger(__name__)
 
 
-# Промежуточный класс
-class MenuItem:
-    title: str
-    callback_data: str
-    data: str | None
-    query: str | None
-
-    def __init__(
-        self, title, callback_data, data: str = None, query: str = None
-    ):
-        self.title = title
-        self.callback_data = callback_data
-        self.data = data
-        self.query = query
-
-
 class TelegramUser(BaseModel):
     """Пользователь в telegram message.from_user"""
 
@@ -185,33 +169,6 @@ class BotCallback(BotEnteredClass):
     data: str
     message_id: int  # noqa
 
-    def get_callback(self) -> list:
-        """Разбить callback ответ на элементы"""
-        callback_data = []
-        callback_data_list = self.data.split(".")
-        for index in range(0, self.MAX_ELEMENTS_IN_CALLBACK):
-            callback_data.append(
-                callback_data_list[index]
-                if len(callback_data_list) > index
-                else None
-            )
-        return callback_data
-
-    def last(self) -> str:
-        """Последнее значение в списке"""
-        elements = self.data.split(".")
-        if elements:
-            return elements[len(elements) - 1]
-        else:
-            # Пустой список callback
-            return None
-
-    def prev(self) -> str:
-        """Отрезать последний элементов списке"""
-        elements = self.data.split(".")
-        elements.pop()
-        return ".".join(elements)
-
 
 class BotEnteredCommand(BotEnteredClass):
     """Введена команда"""
@@ -223,24 +180,20 @@ class BotEnteredCommand(BotEnteredClass):
 class EventMenuItem(BaseModel):
     """Item меню бота"""
 
-    item_name: str = Field(
-        ..., description="Наименование элемента меню"
-    )  # noqa
-    callback_data: str = Field(
-        ..., description="Код возврата при выборе элемента"
-    )  # noqa
+    # fmt: off
+    item_name: str = Field(..., description="Наименование элемента меню")  # noqa
+    callback_data: str = Field(..., description="Код возврата при выборе элемента")  # noqa
+    # fmt: on
 
 
 class BotSendBase(HeaderEvent):
     """Послать боту меню"""
 
-    chat_id: int = Field(
-        ..., description="Идентификатор чата в telegram"
-    )  # noqa
-    history: list | None = Field(
-        None, description="История отправленных сообщений в диалоге"
-    )  # noqa
+    # fmt: off
+    chat_id: int = Field(..., description="Идентификатор чата в telegram")  # noqa
+    history: list | None = Field(None, description="История отправленных сообщений в диалоге")  # noqa
     bot: str = config.TELEGRAM_BOT
+    # fmt: on
 
     def route_key(self):
         return f"{self.bot}:{self.chat_id}"
@@ -273,97 +226,6 @@ class BotSendMenu(BotSendBase):
     row_width: int | None = Field(None, description="Кол-во элементов в строке меню, по умолчанию 1")  # noqa
     update: bool | None = Field(None, description="Обновить последний элемент меню")  # noqa
     # fmt: on
-
-    async def send_menu(
-        chat_id: int,
-        items: list,
-        query: str = None,
-        row_width: int = None,
-        parent: object = None,
-        prefix: str = None,
-        update: bool = False,
-        data: object = None,
-    ):
-        """Отправить сообщение на создание меню в боте
-
-        :param int chat_id: идентификтор чата
-        :param list items: список элементов меню (title, callback_data)
-        :param str query: Текст запроса меню, defaults to None
-        :param int row_width: Кол-во элементов в строке, defaults to None
-        :param str chain_uuid: идентификатор цепочки сообщений,
-          defaults to None
-        """
-        # Создать сообщение отправить меню
-        await BotSendMenu(
-            # идентификтор получателя в telegram
-            chat_id=chat_id,
-            # Элементы меню
-            items=[
-                EventMenuItem(
-                    item_name=item.title,
-                    callback_data=(
-                        (
-                            (
-                                item.callback_data
-                                if prefix == "*"
-                                else f"{prefix}.{item.callback_data}"
-                            )
-                            if prefix
-                            else f"{item.callback_data}{item.callback_data2}"
-                        )
-                        # + f".{item.callback_data2}"
-                        # if item.callback_data2
-                        # else ""
-                    ),
-                )
-                for item in items
-            ],
-            # Вопрос в меню
-            query=query if query else "Выберите?",
-            # Кол-во элементов в строке
-            row_width=row_width,
-            update=update,
-        ).add(data=data).send(parent=parent)
-
-    async def send_menu_items(
-        obj,
-        items: list,
-        prefix: str = None,
-        query: str = None,
-        row_width: int = 3,
-    ):
-        await BotSendMenu.send_menu(
-            chat_id=obj.chat_id,
-            items=items,
-            parent=obj,
-            row_width=row_width,
-            query=query,
-            prefix=prefix,
-        )
-
-    async def send_menu_elem(
-        obj,
-        elements: list,
-        prefix: str = None,
-        query: str = None,
-        row_width: int = 3,
-        update: bool = False,
-        data: object = None,
-    ):
-        items = []
-        logger.info(f"{elements=}")
-        for id, name in elements:
-            items.append(MenuItem(name, str(id)))
-        await BotSendMenu.send_menu(
-            chat_id=obj.chat_id,
-            items=items,
-            parent=obj,
-            row_width=row_width,
-            query=query,
-            prefix=prefix,
-            update=update,
-            data=data,
-        )
 
 
 class BotSendText(BotSendBase):
