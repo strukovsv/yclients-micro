@@ -1,6 +1,9 @@
 import logging
+import inspect
+import sys
 
 from micro.singleton import MetaSingleton
+from pydantic import BaseModel
 
 import micro.models.system_events  # noqa
 import micro.models.bot_events  # noqa
@@ -25,17 +28,20 @@ class Schema(metaclass=MetaSingleton):
     def __init__(self):
         pass
 
-    def get_schema(self, schema_name: str, return_type: str = "json") -> dict:
-        # Получить все классы из модуля
-        for name, schema_obj in self.get_models().items():
-            # Найти наш объект
-            if schema_name.lower() == name.lower():
-                return schema_obj.schema()
-
-    def event_schemas(self) -> dict:
-        new_schemes = {}
-        for name, obj in self.get_models().items():
-            new_schemes[name] = {
-                "$ref": f"/schemes/{name}",
-            }
-        return new_schemes
+    def get_models(self):
+        """Получить список объектов и закэшировать"""
+        if not self._models:
+            modules = [
+                module_object
+                for module_name, module_object in sys.modules.items()
+                if module_name.startswith("micro.models.")
+            ]
+            result = {}
+            for module_object in modules:
+                for name, obj in inspect.getmembers(
+                    module_object, inspect.isclass
+                ):
+                    if issubclass(obj, BaseModel) and name != "HeaderEvent":
+                        result[name] = obj
+            self._models = result
+        return self._models

@@ -99,14 +99,22 @@ def all_event_handler():
 
 async def capture_dict(message: dict) -> None:
     # Получить имя события
-    event_name = message.get("header", {}).get("event", None) or message.get(
-        "event", None
-    )
-    # logger.info(f'capture: {message=} {message_handlers=}')
+    header: dict = message.get("header", {})
+    event_name = header.get("event", None) or message.get("event", None)
+
+    def logger_capture_event():
+        if header:
+            source = header.get("source")
+            uuid = header.get("uuid")
+            logger.info(
+                f'get event from "{source}" '
+                + f'-> "{event_name}" with uuid={uuid}'
+            )
+
     # ++ legasy
     for handler in message_handlers:
         if handler["name"].lower() == event_name.lower():
-            # logger.info(f"capture message: {message=}")
+            logger_capture_event()
             await handler["handler"](message)
             # Обработано входящее событие
             WORKED_EVENTS_CNT.inc()
@@ -123,6 +131,8 @@ async def capture_dict(message: dict) -> None:
                 data_obj = obj(**message)
                 # Вызвать метод дополнителной сереализации
                 await data_obj.deserialization()
+                # Вывести пришло событие
+                logger_capture_event()
                 # Вызвать функцию обработчик события, передать на вход объект
                 await handler["handler"](data_obj)
                 # Обработано входящее событие
