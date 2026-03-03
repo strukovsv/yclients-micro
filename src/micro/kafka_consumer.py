@@ -10,6 +10,7 @@ from micro.singleton import MetaSingleton
 import micro.config as config
 
 from micro.schemes import Schema
+from micro.logging_trace import TRACE
 
 from micro.kafka_producer import KafkaProducer
 
@@ -106,6 +107,11 @@ async def capture_dict(message: dict) -> None:
         if header:
             source = header.get("source")
             uuid = header.get("uuid")
+            trace_id = header.get("trace_id")
+            if trace_id:
+                TRACE().set(trace_id)
+            else:
+                TRACE().new()
             logger.info(
                 f'get event from "{source}" '
                 + f'-> "{event_name}" with uuid={uuid}'

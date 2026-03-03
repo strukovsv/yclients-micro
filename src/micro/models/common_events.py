@@ -68,6 +68,23 @@ class MessagePreparedForClient(HeaderEvent):
         return self.client_id
 
 
+class MessagePreparedForLead(HeaderEvent):
+    """Сообщение для lead готово к отправке через внешнее API"""
+
+    # fmt: off
+    sender: str | None = Field(None, description="Кто отправил сообщение клиенту") # noqa
+    contact_id: str = Field(..., description="Идентификатор клиента в yclients") # noqa
+    text: Union[str, List[str | None], None] = Field(..., description="Текст отчета, строка или массив строк") # noqa
+    type: str | None = Field(None, description="Тип отчета: html, markdown") # noqa
+    plain: int | None = Field(None, description="Использовать моноширифный текст 1")  # noqa
+    role: str | None = Field(None, description="Роль по умолчанию, если не задана, то отправил сервис") # noqa
+    is_mass_mailing: bool | None = Field(None, description="Массовая рекламная рассылка") # noqa
+    # fmt: on
+
+    def route_key(self):
+        return self.contact_id
+
+
 class MessageSentToClient(HeaderEvent):
     """Сообщение успешно отправлено клиенту и мы получили код сообщения"""
 
@@ -85,6 +102,24 @@ class MessageSentToClient(HeaderEvent):
 
     def route_key(self):
         return self.client_id
+
+
+class MessageSentToLead(HeaderEvent):
+    """Сообщение успешно отправлено lead и мы получили код сообщения"""
+
+    # fmt: off
+    sender: str | None = Field(None, description="Кто отправил сообщение клиенту") # noqa
+    contact_id: str = Field(..., description="Идентификатор клиента в yclients") # noqa
+    text: Union[str, List[str | None], None] = Field(..., description="Текст отчета, строка или массив строк") # noqa
+    type: str | None = Field(None, description="Тип отчета: html, markdown") # noqa
+    plain: int | None = Field(None, description="Использовать моноширифный текст 1")  # noqa
+    role: str | None = Field(None, description="Роль по умолчанию, если не задана, то отправил сервис") # noqa
+    notification_uid: str = Field(None, description="Идентификатор отправленного сообщения") # noqa
+    channel: str | None = Field(None, description="Канал отправки сообщения") # noqa
+    # fmt: on
+
+    def route_key(self):
+        return self.contact_id
 
 
 class MessagePreparedForChat(HeaderEvent):
@@ -132,12 +167,29 @@ class MessageReceivedFromClient(HeaderEvent):
 
     # fmt: off
     client_id: int = Field(..., description="Идентификатор клиента в yclients") # noqa
+    contact_id: str = Field(..., description="Идентификатор отправителя во внешней системе")  # noqa
+    conversation_id: str = Field(..., description="Идентификатор диалога")  # noqa
     text: str = Field(..., description="Текст сообщения") # noqa
     phone: str = Field(..., description="Телефон клиента") # noqa
     # fmt: on
 
     def route_key(self):
         return self.client_id
+
+
+class MessageReceivedFromLead(HeaderEvent):
+    """Пришло новое сообщение не от клиента
+    Отправителя в базе данных yclients"""
+
+    # fmt: off
+    phone: str | None = Field(None, description="Телефон отправителя сообщения")  # noqa
+    contact_id: str = Field(..., description="Идентификатор отправителя во внешней системе")  # noqa
+    conversation_id: str = Field(..., description="Идентификатор диалога")  # noqa
+    text: str = Field(..., description="Текст сообщения")  # noqa
+    # fmt: oт
+
+    def route_key(self):
+        return self.contact_id
 
 
 class ServiceStarted(HeaderEvent):

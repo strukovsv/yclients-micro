@@ -9,6 +9,7 @@ import uuid
 from pydantic import Field, BaseModel
 
 from micro.kafka_producer import KafkaProducer
+from micro.logging_trace import TRACE
 
 import micro.config as config
 
@@ -41,6 +42,7 @@ class Header(BaseModel):
     desc: str | None = Field(None, description="Описание сообщения") # noqa
     version: str | None = Field(None, description="Версия сообщения") # noqa
     source: str | None = Field(None, description="Источник сообщения") # noqa
+    trace_id: str | None = Field(None, description="Цепочка сообщений") # noqa
     # fmt: on
 
 
@@ -58,6 +60,7 @@ class Addresse(BaseModel):
     client_id: str | None = Field(None, description="Получатель сообщения в yclients SMS") # noqa
     chat_id: str | None = Field(None, description="Получатель сообщения в telegram") # noqa
     channel: str | None = Field(None, description="Идентификатор канала или группы в telegram") # noqa
+    contact_id: str | None = Field(None, description="Идентификатор lead или клиента во внешней системе") # noqa
     # fmt: on
 
 
@@ -91,6 +94,7 @@ class HeaderEvent(BaseModel):
             self.addresse.chat_id
             or self.addresse.client_id
             or self.addresse.channel
+            or self.addresse.contact_id
             or config.PRODUCER_ID
             or "na"
         )
@@ -108,6 +112,7 @@ class HeaderEvent(BaseModel):
         addresse: Addresse = None,
         chat_id: str = None,
         channel: str = None,
+        contact_id: str = None,
         parent: object = None,
     ) -> None:
         """
@@ -154,12 +159,15 @@ class HeaderEvent(BaseModel):
             version=version,
             # источник сообщения
             source=config.PRODUCER_ID,
+            # Идентификатор trace_id
+            trace_id=TRACE().trace_id,
         )
         # Получатель сообщения
         self.addresse = addresse or Addresse(
             client_id=client_id,
             chat_id=chat_id,
             channel=channel,
+            contact_id=contact_id,
         )
         # Строим цепочку сообщений (distributed tracing)
         # Сформировать атрибут для цепочки сообщений
@@ -187,12 +195,13 @@ class HeaderEvent(BaseModel):
 
 
 class PrintBaseEvent(HeaderEvent):
-    """ Базовое событие для генерации отчетов (сотрудник/админ).
+    """Базовое событие для генерации отчетов (сотрудник/админ).
 
     Содержит параметры периода и привязки к сотруднику для фильтрации.
     period: yesterday, now, tomorrow, prev-week, week, next-week,
             prev-month, month, next-month, YYYYMMDD
     """
+
     # fmt: off
     period: str = Field(..., description="Период формирования отчета")  # noqa
     staff: str | None = Field(None, description="Сотрудник")  # noqa
