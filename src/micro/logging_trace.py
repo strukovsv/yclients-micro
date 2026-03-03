@@ -4,6 +4,8 @@ import uuid
 
 from micro.singleton import MetaSingleton
 
+logger = logging.getLogger(__name__)
+
 
 class TRACE(metaclass=MetaSingleton):
 
@@ -24,7 +26,7 @@ old_factory = logging.getLogRecordFactory()
 
 def record_factory(*args, **kwargs):
     record = old_factory(*args, **kwargs)
-    record.trace_id = TRACE().trace_id
+    record.name = TRACE().trace_id
     return record
 
 

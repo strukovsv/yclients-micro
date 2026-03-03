@@ -777,7 +777,7 @@ class Yclients(metaclass=MetaSingleton):
                 text = message
             else:
                 body["phone"] = "79233549672"
-                text = f"""fromni for: {phone}
+                text = f"""fromni for: {phone or contact_id}
 -----------------------
 {message}"""
             body["message"] = {"text": text}

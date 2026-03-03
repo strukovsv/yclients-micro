@@ -18,6 +18,8 @@ from prometheus_client import (
     generate_latest,
 )
 
+import micro.logging_trace  # noqa
+
 from micro.utils import hide_passwords
 import micro.config as config
 from micro.kafka_consumer import KafkaConsumer, capture
