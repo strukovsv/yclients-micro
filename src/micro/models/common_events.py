@@ -183,6 +183,7 @@ class MessageReceivedFromLead(HeaderEvent):
 
     # fmt: off
     phone: str | None = Field(None, description="Телефон отправителя сообщения")  # noqa
+    contact: dict = Field(None, description="Контакт отправителя сообщения")  # noqa
     contact_id: str = Field(..., description="Идентификатор отправителя во внешней системе")  # noqa
     conversation_id: str = Field(..., description="Идентификатор диалога")  # noqa
     text: str = Field(..., description="Текст сообщения")  # noqa

@@ -50,6 +50,7 @@ class LeadChatEvent(HeaderEvent):
 
     # fmt: off
     text: str = Field(..., description="Входящее сообщение", )  # noqa
+    contact: dict = Field(..., description="Контакт входящее сообщение", )  # noqa
     contact_id: str = Field(..., description="Идентификатор отправителя во внешней системе")  # noqa
     conversation_id: str = Field(..., description="Идентификатор диалога")  # noqa
     phone: str | None = Field(None, description="Телефон",)  # noqa
