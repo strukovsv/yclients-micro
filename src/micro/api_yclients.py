@@ -716,15 +716,20 @@ class Yclients(metaclass=MetaSingleton):
         # return rows
 
     async def get_conversations(
-        self, start_date=None, end_date=None, ids=None
+        self,
+        start_date=None,
+        end_date=None,
+        ids=None,
+        offset: int = 0,
+        limit: int = 5,
     ):
         """Получить все диалоги из fromni"""
         rows = await self.imobis_load_object(
             obj_name="conversations",
             url="conversations",
             method="post",
-            params={"offset": 0, "limit": 5},
-            is_get_blocks=False,
+            params={"offset": offset, "limit": limit},
+            # is_get_blocks=True,
         )
         logger.debug(f"get_conversations, rows: {len(rows)}")
         return rows
