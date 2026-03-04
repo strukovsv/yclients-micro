@@ -154,7 +154,7 @@ class UpdatedMessageStatus(HeaderEvent):
 
     # fmt: off
     id: int = Field(..., description="Идентификатор сообщения") # noqa
-    client_id: int = Field(..., description="Идентификатор клиента в yclients") # noqa
+    client_id: int | None = Field(None, description="Идентификатор клиента в yclients") # noqa
     phone: str = Field(..., description="Телефон получателя сообщения") # noqa
     sender: str = Field(..., description="Отправитель сообщения") # noqa
     text: str = Field(..., description="Текст сообщения") # noqa
