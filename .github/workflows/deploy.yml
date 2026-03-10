@@ -1,0 +1,29 @@
+name: deploy from branche master
+
+on:
+
+  push:
+    branches: ["master"]
+
+  workflow_dispatch:
+
+jobs:
+
+  new-release:
+
+    name: start deploy micro library
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: start deploy
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ vars.SSH_HOST }}
+        port: ${{ vars.SSH_PORT }}
+        username: ${{ vars.SSH_USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          cd ~yclients/microservices/micro
+          git checkout master
+          git pull
+          cd ~yclients/microservices
