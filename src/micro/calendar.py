@@ -1,10 +1,9 @@
-import logging
 import asyncio
+import logging
 
-import caldav
+import caldav  # type: ignore
 
 import micro.config as config
-
 from micro.singleton import MetaSingleton
 
 logger = logging.getLogger(__name__)

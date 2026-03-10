@@ -21,7 +21,7 @@ PARTNER_TOKEN = config.get("PARTNER_TOKEN", None)
 PAGE_COUNT = (
     int(config.get("PAGE_COUNT", None))
     if config.get("PAGE_COUNT", None)
-    else None
+    else 25
 )
 IMOBIS_TOKEN = config.get("IMOBIS_TOKEN", None)
 

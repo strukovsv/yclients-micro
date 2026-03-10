@@ -1,45 +1,45 @@
 from prometheus_client import Counter
 
-API_YCLIENTS_POST_REQUEST_CNT = Counter(
+API_YCLIENTS_POST_REQUEST_CNT: Counter = Counter(
     "api_yclients_post_request_cnt", "Count send post request to api yclients"
 )
-API_YCLIENTS_GET_REQUEST_CNT = Counter(
+API_YCLIENTS_GET_REQUEST_CNT: Counter = Counter(
     "api_yclients_get_request_cnt", "Count send get request to api yclients"
 )
-API_YCLIENTS_DELETE_REQUEST_CNT = Counter(
+API_YCLIENTS_DELETE_REQUEST_CNT: Counter = Counter(
     "api_yclients_delete_request_cnt",
     "Count send delete request to api yclients",
 )
-API_YCLIENTS_REQUEST_ERROR_CNT = Counter(
+API_YCLIENTS_REQUEST_ERROR_CNT: Counter = Counter(
     "api_yclients_request_error_cnt", "Count error request to api yclients"
 )
 
-DO_EVENTS_CNT = Counter(
+DO_EVENTS_CNT: Counter = Counter(
     "do_events_cnt", "Incoming event count for the consumer server"
 )
 
-WORKED_EVENTS_CNT = Counter(
+WORKED_EVENTS_CNT: Counter = Counter(
     "worked_events_cnt", "Count of processed incoming events"
 )
 
-EVENTS_SENT_CNT = Counter(
+EVENTS_SENT_CNT: Counter = Counter(
     "events_sent_cnt", "Count of events sent from the service"
 )
 
-EVENTS_SENT_DLQ_CNT = Counter(
+EVENTS_SENT_DLQ_CNT: Counter = Counter(
     "events_sent_dql_cnt",
     "Count of events sent into dlq topic from the service",
 )
 
-PG_EXECUTE_CNT = Counter(
+PG_EXECUTE_CNT: Counter = Counter(
     "pg_execute_cnt", "Count executes postgres local base"
 )
 
-PG_FETCHALL_CNT = Counter(
+PG_FETCHALL_CNT: Counter = Counter(
     "pg_fetchall_cnt", "Count fetchalls postgres local base"
 )
 
-PG_UPDATES = Counter(
+PG_UPDATES: Counter = Counter(
     "pg_updates",
     "Count update/insert/delete records postgres local base",
     ["method"],

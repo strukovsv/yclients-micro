@@ -1,17 +1,17 @@
-import logging
-import httpx
 import asyncio
 import datetime
+import logging
 import os
 
-from micro.singleton import MetaSingleton
+import httpx  # type: ignore
 
 import micro.config as config
+from micro.singleton import MetaSingleton
 
 from .metrics import (
-    API_YCLIENTS_POST_REQUEST_CNT,
-    API_YCLIENTS_GET_REQUEST_CNT,
     API_YCLIENTS_DELETE_REQUEST_CNT,
+    API_YCLIENTS_GET_REQUEST_CNT,
+    API_YCLIENTS_POST_REQUEST_CNT,
     API_YCLIENTS_REQUEST_ERROR_CNT,
 )
 
@@ -20,15 +20,15 @@ logger = logging.getLogger(__name__)
 
 class Yclients(metaclass=MetaSingleton):
 
-    partner_token: str = None
-    headers_partner: str = None
-    headers_user: str = None
+    partner_token: str | None = None
+    headers_partner: dict[str, str] | None = None
+    headers_user: dict[str, str] | None = None
     # Включен режим отладки
-    debug: bool = None
+    debug: bool | None = None
     # Каналы отправки закэшировать
-    fromni_channels: list = None
+    fromni_channels: list | None = None
 
-    def __init__(self, is_create_yaml: bool = None):
+    def __init__(self, is_create_yaml: bool | None = None):
         self.chain_id = config.CHAIN_ID
         self.company_id = config.COMPANY_ID
         self.is_create_yaml = is_create_yaml
@@ -132,10 +132,10 @@ class Yclients(metaclass=MetaSingleton):
 
     async def load_object(
         self,
-        obj_name: str,
+        obj_name: str | None,
         url: str,
         params: dict,
-        headers: str = None,
+        headers: str | None = None,
         method: str = "get",
         pagination: bool = True,
     ) -> list:
@@ -274,7 +274,7 @@ class Yclients(metaclass=MetaSingleton):
                 # Запросить в API
                 for i in range(0, 4):
                     try:
-                        __url__ = self.url(url)
+                        __url__ = self.imobis_url(url)
                         API_YCLIENTS_POST_REQUEST_CNT.inc()
                         try:
                             r = await client.post(

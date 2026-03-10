@@ -17,18 +17,16 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-  'fastapi',
-  'fastapi-utils',
-  'starlette-exporter',
-  'prometheus-client',
-  'asyncio',
-  'python-json-logger',
-  'httpx',
-  'aiokafka',
-  'psycopg[binary,pool]',
-  'yoyo-migrations'
-#  ,
-#  'sentry-sdk=='
+  'fastapi==0.135.1',
+  'fastapi-utils==0.8.0',
+  'starlette-exporter==0.23.0',
+  'prometheus-client==0.24.1',
+  'asyncio==4.0.0',
+  'python-json-logger==4.0.0',
+  'httpx==0.28.1',
+  'aiokafka==0.13.0',
+  'psycopg[binary,pool]==3.1.9',
+  'yoyo-migrations==8.2.0'
 ]
 
 [project.urls]
