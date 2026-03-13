@@ -21,6 +21,8 @@ class TelegramUser(BaseModel):
     last_name: str | None  # noqa
     username: str | None  # noqa
     language_code: str  # noqa
+    channel: str | None  # noqa
+    chat_id: str | None  # noqa
 
     access: list | None = []  # noqa
 
@@ -31,6 +33,8 @@ class TelegramUser(BaseModel):
             last_name=kwarg["last_name"],
             username=kwarg["username"],
             language_code=kwarg["language_code"],
+            channel=kwarg["channel"],
+            chat_id=kwarg["chat_id"],
         )
 
     def acc(self, tp_list: any) -> bool:
@@ -77,9 +81,11 @@ class TelegramUser(BaseModel):
             await base.execute(
                 """
 insert into passwd
-(name, first_name, last_name, telegram_id, telegram_username, access)
+(name, first_name, last_name, telegram_id,
+  telegram_username, access, chat_id, channel)
 values
-(%(username)s, %(first_name)s, %(last_name)s, %(id)s, %(username)s, 'user')
+(%(username)s, %(first_name)s, %(last_name)s, %(id)s,
+  %(username)s, 'user', %(chat_id)s, %(channel)s)
         """,
                 self.__dict__,
             )
@@ -103,13 +109,13 @@ class BotBaseClass(HeaderEvent):
     """Базовое сообщение для бота"""
 
     chat_id: str
-    bot: str = config.TELEGRAM_BOT
+    bot: str = config.TELEGRAM_BOT or config.MAX_BOT
 
     def route_key(self):
         return f"{self.bot}:{self.chat_id}"
 
     def is_this_bot(self):
-        return self.bot and self.bot == config.TELEGRAM_BOT
+        return self.bot and self.bot in [config.TELEGRAM_BOT, config.MAX_BOT]
 
 
 class BotEnteredClass(BotBaseClass):
@@ -194,6 +200,7 @@ class BotSendBase(HeaderEvent):
     chat_id: int = Field(..., description="Идентификатор чата в telegram")  # noqa
     history: list | None = Field(None, description="История отправленных сообщений в диалоге")  # noqa
     bot: str = config.TELEGRAM_BOT
+    channel: str = Field(default="telegram", description="По какому каналу отправить сообщение")  # noqa
     # fmt: on
 
     def route_key(self):

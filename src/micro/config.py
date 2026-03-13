@@ -75,6 +75,7 @@ IMOBIS_TOKEN = config.get("IMOBIS_TOKEN", None)
 TELEGRAM_TOKEN = config.get("TELEGRAM_TOKEN", None)
 TELEGRAM_CHAT = config.get("TELEGRAM_CHAT", None)
 TELEGRAM_BOT = config.get("TELEGRAM_BOT", None)
+MAX_BOT = config.get("MAX_BOT", None)
 
 CALDAV_URL = config.get("CALDAV_URL", None)
 CALDAV_USERNAME = config.get("CALDAV_USERNAME", None)
