@@ -118,9 +118,10 @@ class BotEnteredClass(BotBaseClass):
     # Данные о пользователе, какие получены из telegram api
     user: TelegramUser  # noqa
 
-    history: list | None = Field(
-        None, description="История отправленных сообщений в диалоге"
-    )  # noqa
+    # fmt: off
+    history: list | None = Field(None, description="История отправленных сообщений в диалоге")  # noqa
+    channel: str | None = Field(None, description="Канал, откуда пришло сообщение, например telegram, max")  # noqa
+    # fmt: on
 
     async def deserialization(self):
         """Загрузить данные о пользователе из БД
