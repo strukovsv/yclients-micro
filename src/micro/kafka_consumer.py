@@ -28,7 +28,7 @@ class KafkaConsumer(metaclass=MetaSingleton):
         self.consumer = AIOKafkaConsumer(
             **config.CONSUMER_KAFKA,
             enable_auto_commit=config.KAFKA_ENABLE_AUTO_COMMIT,
-            auto_offset_reset="earliest",
+            auto_offset_reset="latest",
             retry_backoff_ms=10000,
         )
         if config.SRC_TOPIC:
