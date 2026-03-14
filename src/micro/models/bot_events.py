@@ -109,13 +109,9 @@ class BotBaseClass(HeaderEvent):
     """Базовое сообщение для бота"""
 
     chat_id: str
-    bot: str = config.TELEGRAM_BOT or config.MAX_BOT
 
     def route_key(self):
-        return f"{self.bot}:{self.chat_id}"
-
-    def is_this_bot(self):
-        return self.bot and self.bot in [config.TELEGRAM_BOT, config.MAX_BOT]
+        return f"{self.chat_id}"
 
 
 class BotEnteredClass(BotBaseClass):
@@ -126,7 +122,6 @@ class BotEnteredClass(BotBaseClass):
 
     # fmt: off
     history: list | None = Field(None, description="История отправленных сообщений в диалоге")  # noqa
-    channel: str | None = Field(None, description="Канал, откуда пришло сообщение, например telegram, max")  # noqa
     # fmt: on
 
     async def deserialization(self):
@@ -156,16 +151,13 @@ class BotEnteredTextMessage(BotEnteredClass):
     """Введен текст в боте"""
 
     text: str  # noqa
-    message_id: int  # noqa
 
 
 class BotEnteredReplyMessage(BotEnteredClass):
     """Введен ответ на текст в боте"""
 
     text: str  # noqa
-    message_id: int  # noqa
     reply_text: str | None  # noqa
-    reply_message_id: int  # noqa
 
 
 class BotCallback(BotEnteredClass):
@@ -174,14 +166,12 @@ class BotCallback(BotEnteredClass):
     MAX_ELEMENTS_IN_CALLBACK: int = 5
 
     data: str
-    message_id: int  # noqa
 
 
 class BotEnteredCommand(BotEnteredClass):
     """Введена команда"""
 
     command: str
-    message_id: int  # noqa
 
 
 class EventMenuItem(BaseModel):
@@ -199,15 +189,10 @@ class BotSendBase(HeaderEvent):
     # fmt: off
     chat_id: int = Field(..., description="Идентификатор чата в telegram")  # noqa
     history: list | None = Field(None, description="История отправленных сообщений в диалоге")  # noqa
-    bot: str = config.TELEGRAM_BOT
-    channel: str = Field(default="telegram", description="По какому каналу отправить сообщение")  # noqa
     # fmt: on
 
     def route_key(self):
-        return f"{self.bot}:{self.chat_id}"
-
-    def is_this_bot(self):
-        return self.bot and self.bot == config.TELEGRAM_BOT
+        return f"{self.chat_id}"
 
     def add(self, stage: str = "stage", data: any = None):
         """Добавить в историю сообщение"""
@@ -268,13 +253,9 @@ class BotBaseTopic(HeaderEvent):
     """Базовое сообщение для бота"""
 
     chat_id: int
-    bot: str = config.TELEGRAM_BOT
 
     def route_key(self):
-        return f"{self.bot}:{self.chat_id}"
-
-    def is_this_bot(self):
-        return self.bot and self.bot == config.TELEGRAM_BOT
+        return f"{self.chat_id}"
 
 
 class BotUpdateTopic(BotBaseTopic):
@@ -302,9 +283,7 @@ class BotEnteredReplyMessageTopic(BotEnteredClass):
     """Введен ответ на текст в topic"""
 
     # fmt: off
-    message_id: int = Field(..., description="Идентификтор сообщения")  # noqa
     reply_text: str | None = Field(..., description="На какой вопрос ответили")  # noqa
-    reply_message_id: int = Field(..., description="Идентификтор входящего сообщения")  # noqa
     dialogues_id: int = Field(..., description="Идентификтор диалога")  # noqa
     # fmt: on
 
