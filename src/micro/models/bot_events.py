@@ -94,16 +94,16 @@ class TelegramUser(BaseModel):
 
     access: list | None = []  # noqa
 
-    def __init__(self, **kwarg):
-        super().__init__(
-            id=str(kwarg["id"]),
-            first_name=kwarg["first_name"],
-            last_name=kwarg["last_name"],
-            username=kwarg["username"],
-            language_code=kwarg["language_code"],
-            channel=kwarg["channel"],
-            chat_id=kwarg["chat_id"],
-        )
+    # def __init__(self, **kwarg):
+    #     super().__init__(
+    #         id=str(kwarg["id"]),
+    #         first_name=kwarg["first_name"],
+    #         last_name=kwarg["last_name"],
+    #         username=kwarg["username"],
+    #         language_code=kwarg["language_code"],
+    #         channel=kwarg["channel"],
+    #         chat_id=kwarg["chat_id"],
+    #     )
 
     def acc(self, tp_list: any) -> bool:
         """Проверить уровень доступа"""
@@ -136,6 +136,8 @@ class TelegramUser(BaseModel):
         return None
 
     async def fill(self) -> list:
+        # Заполнить уровни доступа
+        await self.fill_access()
         """Найти в таблице пользователя, если нет создать"""
         if (
             await base.fetchone(
