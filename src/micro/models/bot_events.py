@@ -13,6 +13,33 @@ from micro.models.header_event import HeaderEvent
 logger = logging.getLogger(__name__)
 
 
+class TelegramUser2(BaseModel):
+    id: int  # noqa
+    first_name: str  # noqa
+    last_name: str | None  # noqa
+    username: str | None  # noqa
+    language_code: str  # noqa
+
+
+class TelegramMessageReceived(HeaderEvent):
+    user: TelegramUser2
+    chat_id: int
+    text: str
+    message_id: int
+    reply_text: str | None
+    reply_message_id: int | None
+    topic_id: int | None
+
+
+class TelegramCallbackReceived(HeaderEvent):
+    # Принято сообщение из канала telegram
+    user: TelegramUser2
+    chat_id: int
+    text: str
+    data: str
+    message_id: int
+
+
 class TelegramUser(BaseModel):
     """Пользователь в telegram message.from_user"""
 
