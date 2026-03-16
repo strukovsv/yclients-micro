@@ -33,11 +33,14 @@ class TelegramMessageReceived(HeaderEvent):
 
 class TelegramCallbackReceived(HeaderEvent):
     # Принято сообщение из канала telegram
+    # fmt: off
+    id: int | None = Field(None, description="История отправленных сообщений в диалоге")  # noqa
     user: TelegramUser2
     chat_id: int
     text: str
     data: str
     message_id: int
+    # fmt: on
 
 
 class TelegramUser(BaseModel):
