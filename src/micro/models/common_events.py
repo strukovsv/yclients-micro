@@ -48,6 +48,9 @@ class MessagePreparedForStaff(HeaderEvent):
     role: str | None = Field(None, description="Роль по умолчанию, если не задана, то отправил сервис") # noqa
     # fmt: on
 
+    def route_key(self):
+        return self.chat_id
+
 
 class MessagePreparedForClient(HeaderEvent):
     """Сообщение для клиента готово к отправке через внешнее API"""

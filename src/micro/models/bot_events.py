@@ -30,6 +30,9 @@ class TelegramMessageReceived(HeaderEvent):
     reply_message_id: int | None
     topic_id: int | None
 
+    def route_key(self):
+        return f"{self.chat_id}"
+
 
 class TelegramCallbackReceived(HeaderEvent):
     # Принято сообщение из канала telegram
@@ -41,6 +44,9 @@ class TelegramCallbackReceived(HeaderEvent):
     data: str
     message_id: int
     # fmt: on
+
+    def route_key(self):
+        return f"{self.chat_id}"
 
 
 class MaxUser(BaseModel):
@@ -67,6 +73,9 @@ class MaxMessageReceived(HeaderEvent):
     topic_id: int | None
     # fmt: on
 
+    def route_key(self):
+        return f"{self.chat_id}"
+
 
 class MaxCallbackReceived(HeaderEvent):
 
@@ -79,6 +88,9 @@ class MaxCallbackReceived(HeaderEvent):
     message_id: str
     timestamp: int | None = Field(None, description="Время сообщения")  # noqa
     # fmt: on
+
+    def route_key(self):
+        return f"{self.chat_id}"
 
 
 class TelegramUser(BaseModel):
