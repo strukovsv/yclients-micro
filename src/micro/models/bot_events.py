@@ -43,6 +43,44 @@ class TelegramCallbackReceived(HeaderEvent):
     # fmt: on
 
 
+class MaxUser(BaseModel):
+    """Пользователь в max"""
+
+    # fmt: off
+    id: int  # noqa
+    first_name: str  # noqa
+    last_name: str | None  # noqa
+    username: str | None  # noqa
+    language_code: str  # noqa
+    # fmt: on
+
+
+class MaxMessageReceived(HeaderEvent):
+
+    # fmt: off
+    user: MaxUser
+    chat_id: int
+    text: str
+    message_id: str
+    reply_text: str | None
+    reply_message_id: str | None
+    topic_id: int | None
+    # fmt: on
+
+
+class MaxCallbackReceived(HeaderEvent):
+
+    # fmt: off
+    id: int
+    user: MaxUser
+    chat_id: int
+    text: str
+    data: str
+    message_id: str
+    timestamp: int | None = Field(None, description="Время сообщения")  # noqa
+    # fmt: on
+
+
 class TelegramUser(BaseModel):
     """Пользователь в telegram message.from_user"""
 
