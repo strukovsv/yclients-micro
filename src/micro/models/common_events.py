@@ -151,6 +151,9 @@ class MessageStatusReceived(HeaderEvent):
     channel: str = Field(..., description="Канал") # noqa
     # fmt: on
 
+    def route_key(self):
+        return self.phone
+
 
 class UpdatedMessageStatus(HeaderEvent):
     """Обновлен статус сообщения в системе"""
@@ -164,6 +167,9 @@ class UpdatedMessageStatus(HeaderEvent):
     text: str = Field(..., description="Текст сообщения") # noqa
     status: str = Field(..., description="Статус сообщения") # noqa
     # fmt: on
+
+    def route_key(self):
+        return self.phone or self.client_id or self.contact_id or self.sender
 
 
 class MessageReceivedFromClient(HeaderEvent):
