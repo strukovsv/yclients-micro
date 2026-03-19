@@ -52,6 +52,7 @@ DST_TOPIC = config.get("TOPIC", None)
 SRC_PATTERN_TOPIC = config.get("SRC_PATTERN_TOPIC", None)
 DLQ_WRITE_TOPIC = config.get("DLQ_WRITE_TOPIC", None)
 DLQ_READ_TOPIC = config.get("DLQ_READ_TOPIC", None)
+LOCAL_TOPIC = config.get("LOCAL_TOPIC", None)
 # When set to True, the producer will ensure that exactly one copy
 # of each message is written in the stream.
 # If False, producer retries due to broker failures, etc.,

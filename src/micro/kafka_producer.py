@@ -117,14 +117,18 @@ class KafkaProducer(metaclass=MetaSingleton):
             ).encode(),
         )
 
-    async def send_kafka(self, key: any, data: dict) -> None:
+    async def send_kafka(
+        self, key: any, data: dict, topic: str = None
+    ) -> None:
         """Отправить сообщение в topic
         по умолчанию
 
         :param any key: route key
         :param dict data: сообщение
         """
-        await self.send_kafka_topic(topic=config.DST_TOPIC, key=key, data=data)
+        await self.send_kafka_topic(
+            topic=topic if topic else config.DST_TOPIC, key=key, data=data
+        )
 
     async def stop(self):
         """Остановить kafka соединение и отпустить объект"""

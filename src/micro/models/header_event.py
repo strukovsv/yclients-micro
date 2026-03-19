@@ -114,6 +114,7 @@ class HeaderEvent(BaseModel):
         channel: str = None,
         contact_id: str = None,
         parent: object = None,
+        topic: str = None,
     ) -> None:
         """
         Отправляет событие в Kafka с авто-генерацией заголовка.
@@ -187,7 +188,7 @@ class HeaderEvent(BaseModel):
         # Отправить сообщение, если не задан ключ,
         # то взять от даты псевдослучайное число
         await KafkaProducer().send_kafka(
-            key=key or self.route_key(), data=self.dict()
+            key=key or self.route_key(), data=self.dict(), topic=topic
         )
         logger.info(
             f'send event "{self.header.event}" with uuid={self.header.uuid}'

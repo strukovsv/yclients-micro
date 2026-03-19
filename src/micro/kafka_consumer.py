@@ -31,15 +31,24 @@ class KafkaConsumer(metaclass=MetaSingleton):
             auto_offset_reset="latest",
             retry_backoff_ms=10000,
         )
+        topics = []
         if config.SRC_TOPIC:
-            topics = [config.SRC_TOPIC]
-            if config.DLQ_READ_TOPIC:
-                topics.append(config.DLQ_READ_TOPIC)
+            topics.append(config.SRC_TOPIC)
+        if config.LOCAL_TOPIC:
+            topics.append(config.LOCAL_TOPIC)
+        if config.DLQ_READ_TOPIC:
+            topics.append(config.DLQ_READ_TOPIC)
+        if topics:
             self.consumer.subscribe(topics=topics)
             logger.info(f"subscribe topics: {topics}")
-        if config.SRC_PATTERN_TOPIC:
-            self.consumer.subscribe(pattern=config.SRC_PATTERN_TOPIC)
-            logger.info(f"subscribe topic pattern: {config.SRC_PATTERN_TOPIC}")
+        else:
+            if config.SRC_PATTERN_TOPIC:
+                self.consumer.subscribe(pattern=config.SRC_PATTERN_TOPIC)
+                logger.info(
+                    f"subscribe topic pattern: {config.SRC_PATTERN_TOPIC}"
+                )
+            else:
+                raise Exception("Service not source topics")
         await self.consumer.start()
 
     async def get_messages(self):
