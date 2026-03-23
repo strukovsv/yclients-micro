@@ -9,6 +9,8 @@ from micro.singleton import MetaSingleton
 
 # from micro.models.header_event import HeaderEvent, Header
 
+from micro.logging_trace import TRACE
+
 import micro.config as config
 
 from .metrics import EVENTS_SENT_CNT
@@ -138,7 +140,12 @@ class KafkaProducer(metaclass=MetaSingleton):
             self.producer = None
 
     async def send_event(
-        self, event: str, message: dict, key: any = None, obj: object = None
+        self,
+        event: str,
+        message: dict,
+        key: any = None,
+        obj: object = None,
+        trace_id: str = None,
     ) -> None:
         """Отправить сообщение в topic
 
@@ -156,6 +163,12 @@ class KafkaProducer(metaclass=MetaSingleton):
         # Сформировать атрибут для цепочки сообщений
         if "chain_uuid" not in js:
             js["chain_uuid"] = js["uuid"]
+        new_trace_id = trace_id
+        if new_trace_id is None:
+            new_trace_id = TRACE().trace_id
+        if new_trace_id is None:
+            new_trace_id = TRACE().new()
+        js["trace_id"] = new_trace_id
         # Валидация объекта
         if obj:
             try:
@@ -170,6 +183,17 @@ class KafkaProducer(metaclass=MetaSingleton):
         # Отправить сообщение
         await self.send_kafka(key=key if key else "na", data=js)
         logger.info(f'send event "{event}"')
+
+    async def send_event_with_new_trace(
+        self, event: str, message: dict, key: any = None, obj: object = None
+    ) -> None:
+        return await self.send_event(
+            event=event,
+            message=message,
+            key=key,
+            obj=obj,
+            trace_id=TRACE().new(),
+        )
 
 
 # async def send_event(message: dict, event: str = None):

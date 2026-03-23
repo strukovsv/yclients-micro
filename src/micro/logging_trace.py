@@ -16,9 +16,10 @@ class TRACE(metaclass=MetaSingleton):
 
     def set(self, trace_id: str):
         self.trace_id = trace_id
+        return self.trace_id
 
     def new(self):
-        self.set(uuid.uuid4().hex[:10])
+        return self.set(uuid.uuid4().hex[:12])
 
 
 old_factory = logging.getLogRecordFactory()

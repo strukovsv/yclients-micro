@@ -2,6 +2,7 @@ import logging
 import re
 
 from types import FunctionType
+from micro.logging_trace import TRACE
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,11 @@ class Events:
         event_name = js.get("event", None)
         if event_name:
             for name, func in cls.__dict__.items():
+                trace_id = js.get("trace_id")
+                if trace_id:
+                    TRACE().set(trace_id)
+                else:
+                    TRACE().new()
                 if type(func) is FunctionType and (
                     get_event_name(event_name) + "_"
                 ).startswith(f"{name}_"):
@@ -37,7 +43,7 @@ class Events:
                     }
                     sjs = f"{js_example}"[0:200]
                     logger.info(
-                        f'arrived message "{event_name}" '
+                        f'arrived message "{event_name}/{trace_id}" '
                         + f'to func: "{name}" : "{sjs}"'
                     )
                     await func(
