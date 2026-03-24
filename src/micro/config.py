@@ -77,3 +77,5 @@ TELEGRAM_CHAT = config.get("TELEGRAM_CHAT", None)
 CALDAV_URL = config.get("CALDAV_URL", None)
 CALDAV_USERNAME = config.get("CALDAV_USERNAME", None)
 CALDAV_TOKEN = config.get("CALDAV_TOKEN", None)
+
+IMOBIS_HTTP_PROXY = config.get("HTTP_PROXY", None)

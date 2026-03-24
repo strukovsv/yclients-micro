@@ -236,6 +236,13 @@ class Yclients(metaclass=MetaSingleton):
                     break
             return records
 
+    def imobis_get_transport(self):
+        return (
+            httpx.AsyncHTTPTransport(proxy=config.IMOBIS_HTTP_PROXY)
+            if config.IMOBIS_HTTP_PROXY
+            else None
+        )
+
     async def imobis_load_object(
         self,
         obj_name: str,
@@ -261,7 +268,9 @@ class Yclients(metaclass=MetaSingleton):
             "Authorization": f"Token {config.IMOBIS_TOKEN}",
             "Content-Type": "application/json",
         }
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(
+            transport=self.imobis_get_transport()
+        ) as client:
             page = 0
             records = []
             while 1:
