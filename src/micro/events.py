@@ -26,14 +26,15 @@ class Events:
         event_name = js.get("event", None)
         if event_name:
             for name, func in cls.__dict__.items():
-                trace_id = js.get("trace_id")
-                if trace_id:
-                    TRACE().set(trace_id)
-                else:
-                    TRACE().new()
                 if type(func) is FunctionType and (
                     get_event_name(event_name) + "_"
                 ).startswith(f"{name}_"):
+                    # Пришло новое сообщение
+                    trace_id = js.get("trace_id")
+                    if trace_id:
+                        TRACE().set(trace_id)
+                    else:
+                        TRACE().new()
                     event_split = event_name.split(".")
                     # Кратко распечатать 200 символов json
                     js_example = {

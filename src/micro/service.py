@@ -18,7 +18,7 @@ from prometheus_client import (
     generate_latest,
 )
 
-import micro.logging_trace  # noqa
+import micro.logging_trace  as logging_trace# noqa
 
 from micro.utils import hide_passwords
 import micro.config as config
@@ -37,6 +37,8 @@ from micro.metrics_api import (
     PROCESS_MEMORY,
     PROCESS_MEMORY2,
 )
+
+logging_trace.TRACE().new()
 
 logger = logging.getLogger(__name__)
 
