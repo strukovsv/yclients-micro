@@ -56,6 +56,8 @@ class Yclients(metaclass=MetaSingleton):
                     json=body,
                     timeout=60.0,
                 )
+                logger.info(f'imobis_post: {r.text=}')
+                logger.info(f'imobis_post: {r.content=}')
             except Exception as e:
                 API_YCLIENTS_REQUEST_ERROR_CNT.inc()
                 # Получить user token
