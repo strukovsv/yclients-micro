@@ -765,7 +765,7 @@ class Yclients(metaclass=MetaSingleton):
             connections = await self.imobis_post(url="/channels/connections")
             self.fromni_channels = []
             # Порядок отправки сообщения по каналам
-            for name in ["max", "telegram", "telegram-web", "vk"]:
+            for name in ["max", "telegram", "telegram-web", "vk", "max-web"]:
                 channel_connections = connections.get("data", {}).get(name, [])
                 channel_ids = [conn.get("id") for conn in channel_connections]
                 self.fromni_channels.append(

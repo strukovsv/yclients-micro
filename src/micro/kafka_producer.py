@@ -104,6 +104,7 @@ class KafkaProducer(metaclass=MetaSingleton):
         )
         # Отправлено событие в kafka
         EVENTS_SENT_CNT.inc()
+        logger.info(f'send into "{topic}": {value}')
 
     async def send_kafka_topic(self, topic: str, key: any, data: dict) -> None:
         """Отправить сообщение в заданный topic
