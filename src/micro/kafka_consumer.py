@@ -2,6 +2,7 @@ import logging
 import json
 import datetime
 import traceback
+import asyncio
 
 from aiokafka import AIOKafkaConsumer
 
@@ -27,9 +28,17 @@ class KafkaConsumer(metaclass=MetaSingleton):
         logger.info(f"connect consumer kafka: {config.CONSUMER_KAFKA}")
         self.consumer = AIOKafkaConsumer(
             **config.CONSUMER_KAFKA,
-            enable_auto_commit=config.KAFKA_ENABLE_AUTO_COMMIT,
+            # Отключает автоматическую отправку подтверждений (commit)
+            # о прочитанных смещениях (offset).
+            # Вы сами отвечаете за вызов consumer.commit()
+            # после успешной обработки сообщения.
+            enable_auto_commit=False,
+            # Определяет, с какого места начинать чтение,
+            # когда у группы потребителей нет сохранённого смещения (первый запуск)
+            # или сохранённое смещение удалено/невалидно.
+            # "latest" – читать только новые сообщения,
+            # которые будут приходить после запуска.
             auto_offset_reset="latest",
-            retry_backoff_ms=10000,
         )
         topics = []
         if config.SRC_TOPIC:
@@ -57,15 +66,25 @@ class KafkaConsumer(metaclass=MetaSingleton):
         то установить соединение и запустить kafka"""
         if not self.consumer:
             await self.start()
-        return await self.consumer.getmany(
-            timeout_ms=config.BATCH_TIMEOUT_SEC * 1000,
-            max_records=config.BATCH_MAX_RECORDS,
-        )
+        try:
+            data = await asyncio.wait_for(
+                self.consumer.getmany(
+                    timeout_ms=config.BATCH_TIMEOUT_SEC * 1000,
+                    max_records=config.BATCH_MAX_RECORDS,
+                ),
+                timeout=config.KAFKA_READ_TIMEOUT_SEC,
+            )
+            return data
+        except asyncio.TimeoutError:
+            logger.error("Kafka poll timeout")
+            return {}
+        except Exception as e:
+            logger.error(f"Kafka poll failed {e}")
+            return {}
 
     async def partition_commit(self, tp, offset):
         """Пометить прочитанные записи обработанными"""
-        if not config.KAFKA_ENABLE_AUTO_COMMIT:
-            await self.consumer.commit({tp: offset})
+        await self.consumer.commit({tp: offset})
 
     async def stop(self):
         """Остановить kafka соединение и отпустить объект"""
