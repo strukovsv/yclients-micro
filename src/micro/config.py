@@ -146,3 +146,9 @@ CALDAV_USERNAME = config.get("CALDAV_USERNAME", None)
 CALDAV_TOKEN = config.get("CALDAV_TOKEN", None)
 
 IMOBIS_HTTP_PROXY = config.get("HTTP_PROXY", None)
+
+MAX_TOKEN = config.get("MAX_TOKEN", None)
+
+
+def get_env(env_name: str):
+    return config.get(env_name, None)
