@@ -1,5 +1,6 @@
 import logging
 import json
+import asyncio
 from datetime import datetime, date, time, timedelta
 from typing import Any
 
@@ -81,8 +82,6 @@ class KafkaProducer(metaclass=MetaSingleton):
         if topic:
             self.producer = AIOKafkaProducer(
                 **config.PRODUCER_KAFKA,
-                enable_idempotence=config.ENABLE_IDEMPOTENCE,
-                retry_backoff_ms=10000,
             )
             logger.info(f"connect producer kafka: {config.PRODUCER_KAFKA}")
             await self.producer.start()
@@ -97,14 +96,22 @@ class KafkaProducer(metaclass=MetaSingleton):
         """
         if not self.producer:
             await self.start(topic)
-        await self.producer.send_and_wait(
-            topic=topic,
-            key=str(key).encode() if key else None,
-            value=value,
-        )
-        # Отправлено событие в kafka
-        EVENTS_SENT_CNT.inc()
-        logger.info(f'send into "{topic}": {value}')
+        try:
+            await asyncio.wait_for(
+                self.producer.send_and_wait(
+                    topic=topic,
+                    key=str(key).encode() if key else None,
+                    value=value,
+                ),
+                timeout=config.KAFKA_DELIVERY_TIMEOUT_SEC,
+            )
+            # Отправлено событие в kafka
+            EVENTS_SENT_CNT.inc()
+        except asyncio.TimeoutError:
+            logger.error(
+                f"Kafka send timeout after {config.KAFKA_DELIVERY_TIMEOUT_SEC}s"  # noqa
+            )
+            raise
 
     async def send_kafka_topic(self, topic: str, key: any, data: dict) -> None:
         """Отправить сообщение в заданный topic
@@ -180,4 +187,3 @@ class KafkaProducer(metaclass=MetaSingleton):
                 )
         # Отправить сообщение
         await self.send_kafka(key=key if key else "na", data=js)
-        logger.info(f'send event "{event}"')

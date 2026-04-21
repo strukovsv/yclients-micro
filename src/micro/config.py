@@ -45,7 +45,36 @@ PRODUCER_ID = config.get("SRC_GROUP_ID", None)
 PRODUCER_KAFKA = {
     # Обязательные параметры подключения
     "bootstrap_servers": config.get("DST_BOOTSTRAP_SERVERS", None),
+    # Гарантирует, что каждое сообщение будет записано в партицию
+    # ровно один раз (в пределах одной сессии продюсера).
+    # Исключает дубликаты при повторных отправках из-за
+    # сетевых сбоев или ретраев
+    "enable_idempotence": config.bool("KAFKA_ENABLE_IDEMPOTENCE") or True,
+    # Лидер партиции ждёт подтверждения от всех синхронных реплик (ISR),
+    # прежде чем ответить продюсеру
+    "acks": config.get("KAFKA_ACKS", "all"),
+    # Пауза между последовательными ретраями (в миллисекундах).
+    # Не экспоненциальная, а фиксированная
+    "retry_backoff_ms": config.int("KAFKA_RETRY_BACKOFF_MS") or 300,
+    # Максимальное время ожидания ответа от брокера на один запрос.
+    # Если ответ не пришёл за это время, считается ошибкой и
+    # запускается ретрай.
+    "request_timeout_ms": config.int("KAFKA_REQUEST_TIMEOUT_MS") or 30000,
+    # Продюсер ждёт до 10 мс, чтобы накопить несколько сообщений в один batch.
+    # Увеличивает пропускную способность ценой небольшой задержки
+    "linger_ms": config.int("KAFKA_LINGER_MS") or 10,
+    # Сжимает батчи сообщений, снижая сетевой трафик и нагрузку на брокеры.
+    # Snappy даёт хорошее сжатие при малом CPU overhead.
+    # Для текстовых данных (JSON, логи) – обязателен.
+    "compression_type": config.get("KAFKA_COMPRESSION_TYPE", None),
+    # Время жизни метаданных (информация о партициях, лидерах)
+    "metadata_max_age_ms": config.int("KAFKA_METADATA_MAX_AGE_MS") or 300000,
+    # Время простоя соединения с брокером, после которого оно закрывается
+    "connections_max_idle_ms": config.int("KAFKA_CONNECTIONS_MAX_IDLE_MS")
+    or 540000,
 }
+# timeout отправки сообщений в kafka
+KAFKA_DELIVERY_TIMEOUT_SEC = config.int("KAFKA_DELIVERY_TIMEOUT_SEC") or 60
 # Топик отправки сообщений
 SRC_TOPIC = config.get("TOPIC", None)
 DST_TOPIC = config.get("TOPIC", None)
@@ -53,12 +82,6 @@ SRC_PATTERN_TOPIC = config.get("SRC_PATTERN_TOPIC", None)
 DLQ_WRITE_TOPIC = config.get("DLQ_WRITE_TOPIC", None)
 DLQ_READ_TOPIC = config.get("DLQ_READ_TOPIC", None)
 LOCAL_TOPIC = config.get("LOCAL_TOPIC", None)
-# When set to True, the producer will ensure that exactly one copy
-# of each message is written in the stream.
-# If False, producer retries due to broker failures, etc.,
-# may write duplicates of the retried message in the stream.
-# Note that enabling idempotence acks to set to all
-ENABLE_IDEMPOTENCE = True
 
 # 1 - Автоматом делать commit чтения из KAFKA
 # 0 - При вызове команды
