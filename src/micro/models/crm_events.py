@@ -23,3 +23,15 @@ class UpdatedLead(HeaderEvent):
 
     def route_key(self):
         return self.contact_id
+
+
+class ClientStatusChanged(HeaderEvent):
+
+    # fmt: off
+    client_id: int = Field(..., description="Идентификатор клиента",)  # noqa
+    from_state: str | None = Field(None, description="Переход из статуса клиента",)  # noqa
+    to_state: str = Field(..., description="Переход в статус клиента",)  # noqa
+    # fmt: on
+
+    def route_key(self):
+        return self.client_id
