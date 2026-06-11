@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import itertools
 import logging
 import os
 
@@ -16,6 +17,11 @@ from .metrics import (
 )
 
 logger = logging.getLogger(__name__)
+
+MAX_RETRIES = 4
+MIN_REQUEST_INTERVAL = 1.0
+IMOBIS_PAGE_COUNT = 10
+IMOBIS_TIMEOUT = 60.0
 
 
 class Yclients(metaclass=MetaSingleton):
@@ -56,8 +62,8 @@ class Yclients(metaclass=MetaSingleton):
                     json=body,
                     timeout=60.0,
                 )
-                logger.info(f'imobis_post: {r.text=}')
-                logger.info(f'imobis_post: {r.content=}')
+                logger.info(f"imobis_post: {r.text=}")
+                logger.info(f"imobis_post: {r.content=}")
             except Exception as e:
                 API_YCLIENTS_REQUEST_ERROR_CNT.inc()
                 # Получить user token
@@ -82,54 +88,74 @@ class Yclients(metaclass=MetaSingleton):
     def url(self, com):
         return f"https://api.yclients.com/api/v1/{com}"
 
-    async def auth(self):
-        if self.headers_user is None:
-            logger.debug("auth !!!")
-            # Получить токен партнера из настроек
-            self.partner_token = config.PARTNER_TOKEN
-            async with httpx.AsyncClient() as client:
-                # Сформировать заголовок для авторизации по партнеру
-                self.headers_partner = {
-                    "Authorization": f"Bearer {self.partner_token}",
-                    "Content-Type": "application/json",
-                    "Accept": "application/vnd.yclients.v2+json",
-                }
-                # Авторизоваться в системе
-                try:
-                    API_YCLIENTS_POST_REQUEST_CNT.inc()
-                    r = await client.post(
-                        self.url("auth"),
-                        headers=self.headers_partner,
-                        json={
-                            "login": config.YCLIENT_LOGIN,
-                            "password": config.YCLIENT_PASSWORD,
-                        },
-                        timeout=10.0,
-                    )
-                except Exception as e:
-                    API_YCLIENTS_REQUEST_ERROR_CNT.inc()
-                    # Получить user token
-                    logger.error(f"{e=}")
-                    logger.error(f'{self.url("auth")=}')
-                    logger.error(f"{self.headers_partner=}")
-                    logger.error(r.text)
-                    raise
-                try:
-                    auth = r.json()
-                except Exception as e:
-                    API_YCLIENTS_REQUEST_ERROR_CNT.inc()
-                    # Получить user token
-                    logger.error(r.text)
-                    logger.error(e)
-                    raise
-                self.user_token = auth["data"]["user_token"]
-                logger.debug(f"{self.user_token=}")
-                # Сформировать заголовок для авторизации по пользователю
-                self.headers_user = {
-                    "Authorization": f"Bearer {self.partner_token}, User {self.user_token}",  # noqa
-                    "Content-Type": "application/json",
-                    "Accept": "application/vnd.yclients.v2+json",
-                }
+    def _build_partner_headers(self) -> dict:
+        """Формирует заголовки для авторизации по партнёрскому токену."""
+        return {
+            "Authorization": f"Bearer {config.PARTNER_TOKEN}",
+            "Content-Type": "application/json",
+            "Accept": "application/vnd.yclients.v2+json",
+        }
+
+    def _build_user_headers(self, user_token: str) -> dict:
+        """Формирует заголовки для авторизации по пользовательскому токену."""
+        return {
+            "Authorization": f"Bearer {config.PARTNER_TOKEN}, User {user_token}",  # noqa
+            "Content-Type": "application/json",
+            "Accept": "application/vnd.yclients.v2+json",
+        }
+
+    async def _fetch_user_token(self, headers: dict) -> str:
+        """Выполняет запрос авторизации и возвращает user_token."""
+        async with httpx.AsyncClient() as client:
+            r = await self._send_auth_request(client, headers)
+            return self._extract_user_token(r)
+
+    async def _send_auth_request(self, client, headers: dict):
+        """Отправляет POST-запрос авторизации."""
+        API_YCLIENTS_POST_REQUEST_CNT.inc()
+        try:
+            return await client.post(
+                self.url("auth"),
+                headers=headers,
+                json={
+                    "login": config.YCLIENT_LOGIN,
+                    "password": config.YCLIENT_PASSWORD,
+                },
+                timeout=10.0,
+            )
+        except Exception as e:
+            API_YCLIENTS_REQUEST_ERROR_CNT.inc()
+            logger.error(f"Auth request failed: {e=}")
+            logger.error(f"URL: {self.url('auth')=}")
+            logger.error(f"Headers: {headers=}")
+            raise
+
+    def _extract_user_token(self, r) -> str:
+        """Парсит ответ авторизации и извлекает user_token."""
+        try:
+            auth = r.json()
+            return auth["data"]["user_token"]
+        except Exception as e:
+            API_YCLIENTS_REQUEST_ERROR_CNT.inc()
+            logger.error(f"Failed to parse auth response: {r.text}, {e}")
+            raise
+
+    async def auth(self) -> dict:
+        """Авторизация в YClients.
+        Возвращает заголовки пользователя,
+        кэшируя результат."""
+        if self.headers_user is not None:
+            return self.headers_user
+
+        logger.debug("auth: starting authentication")
+
+        partner_headers = self._build_partner_headers()
+        user_token = await self._fetch_user_token(partner_headers)
+
+        self.user_token = user_token
+        self.headers_user = self._build_user_headers(user_token)
+
+        logger.debug(f"{self.user_token=}")
         return self.headers_user
 
     async def load_object(
@@ -137,246 +163,367 @@ class Yclients(metaclass=MetaSingleton):
         obj_name: str | None,
         url: str,
         params: dict,
-        headers: str | None = None,
+        headers: dict | None = None,
         method: str = "get",
         pagination: bool = True,
     ) -> list:
-        """Запросить объект из api
+        """Запросить объект из API.
 
-        :param str obj_name: наименование объекта, yaml файла и базовой таблицы
-        :param str url: ручка api
-        :param dict params: параметры
-        :param str headers: заголовок, по умолчанию заголовок пользователя
-        :param str method: http метод. По умолчанию get
-        :return list: возвращает список объектов
+        :param obj_name: наименование объекта, yaml файла и базовой таблицы
+        :param url: ручка api
+        :param params: параметры запроса
+        :param headers: заголовок; по умолчанию заголовок пользователя
+        :param method: http метод (get/post)
+        :param pagination: включить постраничную загрузку
+        :return: список объектов
         """
-        # По умолчанию заголовок пользователья
-        _headers = headers
-        if _headers is None:
-            _headers = await self.auth()
-        async with httpx.AsyncClient() as client:
-            page = 0
-            page_count = config.PAGE_COUNT
-            records = []
-            while 1:
-                page += 1
-                params["page"] = page
-                params["count"] = page_count
-                # Зафиксировать время запроса
-                start = datetime.datetime.now()
-                # Запросить в API
-                for i in range(0, 4):
-                    try:
-                        __url__ = self.url(url)
-                        if method == "get":
-                            API_YCLIENTS_GET_REQUEST_CNT.inc()
-                            r = await client.get(
-                                __url__,
-                                headers=_headers,
-                                params=params,
-                                timeout=10.0,
-                            )
-                        else:
-                            API_YCLIENTS_POST_REQUEST_CNT.inc()
-                            r = await client.post(
-                                __url__,
-                                headers=_headers,
-                                json=params,
-                                timeout=10.0,
-                            )
-                        js = r.json()
-                        if not js["success"]:
-                            raise Exception(js["meta"]["message"])
-                        rows = js["data"]
-                        break
-                    except Exception as e:
-                        # Получить user token
-                        if i < 3:
-                            logger.debug(
-                                f'attempt: "{i}", error: "{e}", url: "{__url__}"'  # noqa
-                            )
-                            # await asyncio.sleep(10)
-                            await asyncio.sleep(10)
-                            continue
-                        try:
-                            response = r.text
-                        except Exception:
-                            response = None
-                        API_YCLIENTS_REQUEST_ERROR_CNT.inc()
-                        if f"{e}" == "Не найдено":
-                            logger.error(
-                                f'httpx url: "{method} + {__url__}", response: "{response}", message: "Не найдено записей, вернуть []", params: "{params}"'  # noqa
-                            )  # noqa
-                            rows = []
-                        else:
-                            raise Exception(
-                                f'httpx url: "{method} + {__url__}", response: "{response}", message: "{e}", params: "{params}"'  # noqa
-                            )
-                # Поспать немного.
-                # Один запрос, не менее 1 сек
-                # Осталось до одной секуды
-                remain = (
-                    1.0 - (datetime.datetime.now() - start).total_seconds()
-                )
-                if remain > 0:
-                    logger.debug(f"sleep remain: {remain}")
-                    # В linux периоды можно задать меньше одной секунды
-                    await asyncio.sleep(remain)
-                if rows:
-                    if isinstance(rows, list):
-                        records.extend(rows)
-                        # Если строк вернули, меньше чем запросили,
-                        # то завершить чтение
-                        if not pagination:
-                            break
-                        if len(rows) < page_count:
-                            break
-                    else:
-                        records.append(rows)
-                        break
-                else:
-                    break
-            return records
+        _headers = headers or await self.auth()
 
-    def imobis_get_transport(self):
-        return (
-            httpx.AsyncHTTPTransport(proxy=config.IMOBIS_HTTP_PROXY)
-            if config.IMOBIS_HTTP_PROXY
-            else None
+        async with httpx.AsyncClient() as client:
+            return await self._load_all_pages(
+                client, url, params, _headers, method, pagination
+            )
+
+    async def _load_all_pages(
+        self,
+        client,
+        url: str,
+        params: dict,
+        headers: dict,
+        method: str,
+        pagination: bool,
+    ) -> list:
+        """Постранично загружает данные из API."""
+        records = []
+
+        for page in itertools.count(start=1):
+            rows = await self._load_page(
+                client,
+                url,
+                {**params, "page": page, "count": config.PAGE_COUNT},
+                headers,
+                method,
+            )
+
+            if isinstance(rows, list):
+                records.extend(rows)
+                if not pagination or len(rows) < config.PAGE_COUNT:
+                    break
+            elif rows:
+                records.append(rows)
+                break
+            else:
+                break
+
+        return records
+
+    async def _load_page(
+        self,
+        client,
+        url: str,
+        params: dict,
+        headers: dict,
+        method: str,
+    ) -> list | dict | None:
+        """Загружает одну страницу с повторными попытками и rate limiting."""
+        start = datetime.datetime.now()
+        rows = await self._request_with_retries(
+            client, url, params, headers, method
         )
+        await self._enforce_rate_limit(start)
+        return rows
+
+    async def _request_with_retries(
+        self,
+        client,
+        url: str,
+        params: dict,
+        headers: dict,
+        method: str,
+    ) -> list | dict | None:
+        """Выполняет запрос с повторными попытками при ошибках."""
+        full_url = self.url(url)
+        last_exception = None
+
+        for attempt in range(MAX_RETRIES):
+            try:
+                return await self._execute_request(
+                    client, full_url, params, headers, method
+                )
+            except Exception as e:
+                last_exception = e
+                is_last_attempt = attempt == MAX_RETRIES - 1
+
+                if is_last_attempt:
+                    break
+
+                logger.debug(
+                    f'attempt: "{attempt}", error: "{e}", url: "{full_url}"'
+                )
+                await asyncio.sleep(10)
+
+        return self._handle_final_error(
+            last_exception, method, full_url, params, client  # type: ignore
+        )
+
+    async def _execute_request(
+        self,
+        client,
+        url: str,
+        params: dict,
+        headers: dict,
+        method: str,
+    ) -> list | dict:
+        """Выполняет один HTTP-запрос и валидирует ответ."""
+        if method == "get":
+            API_YCLIENTS_GET_REQUEST_CNT.inc()
+            r = await client.get(
+                url, headers=headers, params=params, timeout=10.0
+            )
+        else:
+            API_YCLIENTS_POST_REQUEST_CNT.inc()
+            r = await client.post(
+                url, headers=headers, json=params, timeout=10.0
+            )
+
+        js = r.json()
+        if not js["success"]:
+            raise Exception(js["meta"]["message"])
+
+        return js["data"]
+
+    def _handle_final_error(
+        self,
+        e: Exception,
+        method: str,
+        url: str,
+        params: dict,
+        client,
+    ) -> list | None:
+        """Обрабатывает финальную ошибку после исчерпания попыток."""
+        API_YCLIENTS_REQUEST_ERROR_CNT.inc()
+
+        try:
+            response = (
+                client._transport
+            )  # получаем последний ответ если доступен
+        except Exception:
+            response = None
+
+        context = f'url: "{method} {url}", response: "{response}", params: "{params}"'  # noqa
+
+        if str(e) == "Не найдено":
+            logger.error(
+                f'{context}, message: "Не найдено записей, вернуть []"'
+            )
+            return []
+
+        raise Exception(f'{context}, message: "{e}"')
+
+    async def _enforce_rate_limit(self, start: datetime.datetime) -> None:
+        """Обеспечивает минимальный интервал между запросами (1 запрос/сек)."""
+        elapsed = (datetime.datetime.now() - start).total_seconds()
+        remain = MIN_REQUEST_INTERVAL - elapsed
+        if remain > 0:
+            logger.debug(f"rate limit sleep: {remain:.3f}s")
+            await asyncio.sleep(remain)
+
+    def imobis_get_transport(self) -> httpx.AsyncHTTPTransport | None:
+        """Возвращает транспорт с прокси для Imobis, если задан в конфиге."""
+        if not config.IMOBIS_HTTP_PROXY:
+            return None
+        return httpx.AsyncHTTPTransport(proxy=config.IMOBIS_HTTP_PROXY)
 
     async def imobis_load_object(
         self,
         obj_name: str,
         url: str,
         params: dict,
-        headers: str = None,
-        method: str = "get",
         pagination: bool = True,
         is_get_blocks: bool = True,
     ) -> list:
-        """Запросить объект из api
+        """Загружает объекты из Imobis API с поддержкой пагинации.
 
-        :param str obj_name: наименование объекта, yaml файла и базовой таблицы
-        :param str url: ручка api
-        :param dict params: параметры
-        :param str headers: заголовок, по умолчанию заголовок пользователя
-        :param str method: http метод. По умолчанию get
-        :return list: возвращает список объектов
+        :param obj_name: наименование объекта / yaml файла / базовой таблицы
+        :param url: ручка api
+        :param params: параметры запроса
+        :param pagination: включить постраничную загрузку
+        :param is_get_blocks: использовать offset/limit пагинацию
+        :return: список объектов
         """
-        # По умолчанию заголовок пользователья
-        PAGE_COUNT = 10
-        headers_imobis = {
-            "Authorization": f"Token {config.IMOBIS_TOKEN}",
-            "Content-Type": "application/json",
-        }
+        headers = self._build_imobis_headers()
+
         async with httpx.AsyncClient(
             transport=self.imobis_get_transport()
         ) as client:
-            page = 0
-            records = []
-            while 1:
-                if is_get_blocks:
-                    params["offset"] = page * PAGE_COUNT
-                    params["limit"] = PAGE_COUNT
-                    page += 1
-                # Зафиксировать время запроса
-                start = datetime.datetime.now()
-                # Запросить в API
-                for i in range(0, 4):
-                    try:
-                        __url__ = self.imobis_url(url)
-                        API_YCLIENTS_POST_REQUEST_CNT.inc()
-                        try:
-                            r = await client.post(
-                                self.imobis_url(url),
-                                headers=headers_imobis,
-                                json=params,
-                                timeout=60.0,
-                            )
-                        except httpx.ConnectTimeout:
-                            logger.error("Таймаут подключения к fromni API")
-                            raise
-                        except httpx.ReadTimeout:
-                            logger.error(
-                                "Таймаут ожидания ответа от fromni API"
-                            )
-                            raise
-                        except httpx.NetworkError as e:
-                            # Включает: ConnectError, ReadError,
-                            # WriteError и др.
-                            logger.error(
-                                f"Сетевая ошибка при обращении к fromni: {e}"
-                            )
-                            raise
-                        except httpx.HTTPStatusError as e:
-                            # Сервер вернул 4xx или 5xx
-                            logger.error(
-                                f"HTTP ошибка от fromni: {e.response.status_code} - {e}"  # noqa
-                            )
-                            raise
-                        except ValueError as e:
-                            # Например, ответ не в JSON
-                            logger.error(f"Ответ не в формате JSON: {e}")
-                            raise
-                        except Exception:
-                            # Любая другая непредвиденная ошибка
-                            logger.error(
-                                "Неожиданная ошибка при отправке в fromni"
-                            )
-                            raise
-                        js = r.json()
-                        if js["result"] == "success":
-                            rows = js["data"]
-                            break
-                        raise
-                    except Exception as e:
-                        # Получить user token
-                        if i < 3:
-                            # await asyncio.sleep(10)
-                            await asyncio.sleep(10)
-                            continue
-                        try:
-                            response = r.text
-                        except Exception:
-                            response = None
-                        API_YCLIENTS_REQUEST_ERROR_CNT.inc()
-                        if f"{e}" == "Не найдено":
-                            logger.error(
-                                f'httpx url: "{method} + {__url__}", response: "{response}", message: "Не найдено записей, вернуть []", params: "{params}"'  # noqa
-                            )  # noqa
-                            rows = []
-                        else:
-                            raise Exception(
-                                f'httpx url: "{method} + {__url__}", response: "{response}", message: "{e}", params: "{params}"'  # noqa
-                            )
-                # Поспать немного.
-                # Один запрос, не менее 1 сек
-                # Осталось до одной секуды
-                remain = (
-                    1.0 - (datetime.datetime.now() - start).total_seconds()
-                )
-                if remain > 0:
-                    logger.debug(f"sleep remain: {remain}")
-                    # В linux периоды можно задать меньше одной секунды
-                    await asyncio.sleep(remain)
-                if rows:
-                    if isinstance(rows, list):
-                        records.extend(rows)
-                        # Если строк вернули, меньше чем запросили,
-                        # то завершить чтение
-                        if not pagination:
-                            break
-                        if is_get_blocks and len(rows) < PAGE_COUNT:
-                            break
-                        if not is_get_blocks:
-                            break
-                    else:
-                        records.append(rows)
-                        break
-                else:
+            return await self._imobis_load_all_pages(
+                client, url, params, headers, pagination, is_get_blocks
+            )
+
+    def _build_imobis_headers(self) -> dict:
+        """Формирует заголовки для запросов к Imobis API."""
+        return {
+            "Authorization": f"Token {config.IMOBIS_TOKEN}",
+            "Content-Type": "application/json",
+        }
+
+    async def _imobis_load_all_pages(
+        self,
+        client,
+        url: str,
+        params: dict,
+        headers: dict,
+        pagination: bool,
+        is_get_blocks: bool,
+    ) -> list:
+        """Постранично загружает данные из Imobis API."""
+        records = []
+
+        for page in itertools.count(start=0):
+            page_params = self._build_page_params(params, page, is_get_blocks)
+            rows = await self._imobis_load_page(
+                client, url, page_params, headers
+            )
+
+            if isinstance(rows, list):
+                records.extend(rows)
+                if self._imobis_should_stop(rows, pagination, is_get_blocks):
                     break
-            return records
+            elif rows:
+                records.append(rows)
+                break
+            else:
+                break
+
+        return records
+
+    def _build_page_params(
+        self, params: dict, page: int, is_get_blocks: bool
+    ) -> dict:
+        """Добавляет offset/limit к параметрам запроса."""
+        if not is_get_blocks:
+            return {**params}
+        return {
+            **params,
+            "offset": page * IMOBIS_PAGE_COUNT,
+            "limit": IMOBIS_PAGE_COUNT,
+        }
+
+    def _imobis_should_stop(
+        self, rows: list, pagination: bool, is_get_blocks: bool
+    ) -> bool:
+        """Определяет, нужно ли прекратить загрузку следующих страниц."""
+        if not pagination:
+            return True
+        if not is_get_blocks:
+            return True
+        return len(rows) < IMOBIS_PAGE_COUNT
+
+    async def _imobis_load_page(
+        self,
+        client,
+        url: str,
+        params: dict,
+        headers: dict,
+    ) -> list | dict | None:
+        """Загружает одну страницу с повторными попытками и rate limiting."""
+        start = datetime.datetime.now()
+        rows = await self._imobis_request_with_retries(
+            client, url, params, headers
+        )
+        await self._enforce_rate_limit(start)
+        return rows
+
+    async def _imobis_request_with_retries(
+        self,
+        client,
+        url: str,
+        params: dict,
+        headers: dict,
+    ) -> list | dict | None:
+        """Выполняет запрос с повторными попытками при ошибках."""
+        full_url = self.imobis_url(url)
+        last_exception = None
+
+        for attempt in range(MAX_RETRIES):
+            try:
+                return await self._imobis_execute_request(
+                    client, full_url, params, headers
+                )
+            except Exception as e:
+                last_exception = e
+                if attempt < MAX_RETRIES - 1:
+                    logger.debug(
+                        f'attempt: "{attempt}", error: "{e}", url: "{full_url}"'  # noqa
+                    )
+                    await asyncio.sleep(10)
+
+        return self._imobis_handle_final_error(
+            last_exception, full_url, params  # type: ignore
+        )
+
+    async def _imobis_execute_request(
+        self,
+        client,
+        url: str,
+        params: dict,
+        headers: dict,
+    ) -> list | dict:
+        """Выполняет один POST-запрос к Imobis и валидирует ответ."""
+        API_YCLIENTS_POST_REQUEST_CNT.inc()
+        r = await self._imobis_post_with_error_handling(
+            client, url, params, headers
+        )
+
+        js = r.json()
+        if js.get("result") != "success":
+            raise Exception(js.get("meta", {}).get("message", "Unknown error"))
+
+        return js["data"]
+
+    async def _imobis_post_with_error_handling(
+        self, client, url: str, params: dict, headers: dict
+    ):
+        """Отправляет POST-запрос с детальным логированием сетевых ошибок."""
+        try:
+            return await client.post(
+                url, headers=headers, json=params, timeout=IMOBIS_TIMEOUT
+            )
+        except httpx.ConnectTimeout:
+            logger.error("Таймаут подключения к Imobis API")
+            raise
+        except httpx.ReadTimeout:
+            logger.error("Таймаут ожидания ответа от Imobis API")
+            raise
+        except httpx.NetworkError as e:
+            logger.error(f"Сетевая ошибка при обращении к Imobis: {e}")
+            raise
+        except httpx.HTTPStatusError as e:
+            logger.error(
+                f"HTTP ошибка от Imobis: {e.response.status_code} - {e}"
+            )
+            raise
+        except Exception as e:
+            logger.error(f"Неожиданная ошибка при отправке в Imobis: {e}")
+            raise
+
+    def _imobis_handle_final_error(
+        self,
+        e: Exception,
+        url: str,
+        params: dict,
+    ) -> list | None:
+        """Обрабатывает финальную ошибку после исчерпания попыток."""
+        API_YCLIENTS_REQUEST_ERROR_CNT.inc()
+        context = f'url: "{url}", params: "{params}"'
+
+        if str(e) == "Не найдено":
+            logger.error(
+                f'{context}, message: "Не найдено записей, вернуть []"'
+            )
+            return []
+
+        raise Exception(f'{context}, message: "{e}"')
 
     async def write_transaction(self, params: dict):
         if self.debug:
@@ -718,7 +865,6 @@ class Yclients(metaclass=MetaSingleton):
         rows = await self.imobis_load_object(
             obj_name="contacts",
             url="contacts",
-            method="post",
             params={},
         )
         logger.debug(f"get_contacts, rows: {len(rows)}")
@@ -738,7 +884,6 @@ class Yclients(metaclass=MetaSingleton):
         rows = await self.imobis_load_object(
             obj_name="conversations",
             url="conversations",
-            method="post",
             params={"offset": offset, "limit": limit},
             # is_get_blocks=True,
         )
@@ -752,7 +897,6 @@ class Yclients(metaclass=MetaSingleton):
         rows = await self.imobis_load_object(
             obj_name="messages",
             url="conversation/messages",
-            method="post",
             params={"conversationId": ids},
             is_get_blocks=False,
         )
@@ -774,52 +918,64 @@ class Yclients(metaclass=MetaSingleton):
         return self.fromni_channels
 
     async def send_imobis_message(
-        self, message: str, phone: str = None, contact_id: str = None
-    ):
-        """Отправить сообщение напрямую через fromni
-        Возвращает идентификатор сообщения ID нотификации: str
-        Результат доставки через webhook - notification_message_updated"""
-        body = {}
+        self,
+        message: str,
+        phone: str | None = None,
+        contact_id: str | None = None,
+    ) -> str:
+        """Отправить сообщение напрямую через Imobis.
+
+        :return: ID нотификации или 'Не доставлен'.
+        Результат доставки —
+        через webhook notification_message_updated.
+        """
         if not phone and not contact_id:
-            raise Exception(
-                "Не задан параметр phone или contactId при отправке в Fromni"
+            raise ValueError(
+                "Не задан параметр phone или contact_id при отправке в Imobis"
             )
+
+        body = await self._build_imobis_message_body(
+            message, phone, contact_id
+        )
+        result = await self.imobis_post(url="/notifications/send", body=body)
+        return result.get("id", "Не доставлен")
+
+    async def _build_imobis_message_body(
+        self,
+        message: str,
+        phone: str | None,
+        contact_id: str | None,
+    ) -> dict:
+        """Формирует тело запроса отправки сообщения с учётом окружения."""
+        if config.production:
+            recipient = {
+                k: v
+                for k, v in {"phone": phone, "contactId": contact_id}.items()
+                if v
+            }
+            text = message
         else:
-            if config.production:
-                if phone:
-                    body["phone"] = phone
-                if contact_id:
-                    body["contactId"] = contact_id
-                text = message
-            else:
-                body["phone"] = "79233549672"
-                text = f"""fromni for: {phone or contact_id}
------------------------
-{message}"""
-            body["message"] = {"text": text}
-            body["channels"] = await self.get_fromni_channels()
-            result = await self.imobis_post(
-                url="/notifications/send",
-                body=body,
-            )
-            return result.get("id", "Не доставлен")
+            recipient = {"phone": "79233549672"}
+            text = f"imobis for: {phone or contact_id}\n-----------------------\n{message}"  # noqa
+
+        return {
+            **recipient,
+            "message": {"text": text},
+            "channels": await self.get_fromni_channels(),
+        }
 
 
-async def sms_send_message(message):
-    """Отправить sms сообщение через yclients"""
-    # Получить идентификатор клиента из сообщения
-    client_ids = message.get("client_id", None)
-    # Получить текст сообщения
-    texts = message.get("text", None)
-    # если отчет напрвляется клиенту через sms yclients
-    if client_ids and texts:
-        # Если несколько текстов отправить отдельными сообщениями
-        for text in texts if isinstance(texts, list) else [texts]:
-            # Если несколько клиентов
-            for client_id in (
-                client_ids if isinstance(client_ids, list) else [client_ids]
-            ):
-                # Отправить sms сообщение yclients
-                await Yclients().send_message(
-                    message=text, client_ids=[client_id]
-                )
+async def sms_send_message(message: dict) -> None:
+    """Отправляет SMS через YClients для одного или нескольких клиентов."""
+    client_ids = message.get("client_id")
+    texts = message.get("text")
+
+    if not client_ids or not texts:
+        return
+
+    client_ids = client_ids if isinstance(client_ids, list) else [client_ids]
+    texts = texts if isinstance(texts, list) else [texts]
+
+    yclients = Yclients()
+    for client_id, text in itertools.product(client_ids, texts):
+        await yclients.send_message(message=text, client_ids=[client_id])
