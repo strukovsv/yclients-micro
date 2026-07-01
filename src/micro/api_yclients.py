@@ -903,13 +903,18 @@ class Yclients(metaclass=MetaSingleton):
         logger.debug(f"get_conversation_messages, rows: {len(rows)}")
         return rows
 
-    async def get_fromni_channels(self):
+    async def get_fromni_channels(self, is_mass_mailing: bool = False):
         """Получить из fromni список каналов для отправки"""
         if not self.fromni_channels:
             connections = await self.imobis_post(url="/channels/connections")
             self.fromni_channels = []
             # Порядок отправки сообщения по каналам
-            for name in ["max", "telegram", "telegram-web", "vk", "max-web"]:
+            channels: list = []
+            if is_mass_mailing:
+                channels = ["max", "telegram", "telegram-web", "vk"]
+            else:
+                channels = ["max", "telegram", "telegram-web", "vk", "max-web"]
+            for name in channels:
                 channel_connections = connections.get("data", {}).get(name, [])
                 channel_ids = [conn.get("id") for conn in channel_connections]
                 self.fromni_channels.append(
@@ -922,6 +927,7 @@ class Yclients(metaclass=MetaSingleton):
         message: str,
         phone: str | None = None,
         contact_id: str | None = None,
+        is_mass_mailing: bool = False
     ) -> str:
         """Отправить сообщение напрямую через Imobis.
 
@@ -935,7 +941,7 @@ class Yclients(metaclass=MetaSingleton):
             )
 
         body = await self._build_imobis_message_body(
-            message, phone, contact_id
+            message, phone, contact_id, is_mass_mailing
         )
         result = await self.imobis_post(url="/notifications/send", body=body)
         return result.get("id", "Не доставлен")
@@ -945,6 +951,7 @@ class Yclients(metaclass=MetaSingleton):
         message: str,
         phone: str | None,
         contact_id: str | None,
+        is_mass_mailing: bool = False
     ) -> dict:
         """Формирует тело запроса отправки сообщения с учётом окружения."""
         if config.production:
@@ -961,7 +968,7 @@ class Yclients(metaclass=MetaSingleton):
         return {
             **recipient,
             "message": {"text": text},
-            "channels": await self.get_fromni_channels(),
+            "channels": await self.get_fromni_channels(is_mass_mailing),
         }
 
 
