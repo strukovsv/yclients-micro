@@ -568,3 +568,9 @@ class ChannelTestTriggered(CronBaseClass):
     """Наступило время проверки входных каналов сообщений"""
 
     ...
+
+
+class ReqLoadDigitalkassa(CronBaseClass):
+    """Загрузить чеки из digitalkassa"""
+
+    ...

@@ -111,6 +111,7 @@ def message_handler(event_name):
 def event_handler(event_name):
 
     def decorator(handler):
+        logger.info(f'Зарегестрирован обработчик: {event_name}')
         event_handlers.append({"name": event_name, "handler": handler})
         return handler
 
