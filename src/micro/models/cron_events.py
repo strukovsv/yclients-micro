@@ -574,3 +574,9 @@ class ReqLoadDigitalkassa(CronBaseClass):
     """Загрузить чеки из digitalkassa"""
 
     ...
+
+
+class ReqLoadTwoCan(CronBaseClass):
+    """Загрузить транзакции из 2Can"""
+
+    ...
