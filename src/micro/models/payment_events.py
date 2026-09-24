@@ -31,6 +31,22 @@ class PaymentWriteTransaction2(PaymentBaseClass):
     # fmt: on
 
 
+class TwoCanTransaction(PaymentBaseClass):
+    """Пришла новая транзация 2Can"""
+
+    # fmt: off
+    transaction_id: str = Field(..., description="Идентификатор транзакции") # noqa
+    # fmt: on
+
+
+class DigitalKassaCheck(PaymentBaseClass):
+    """Пришел новый чек из DigitalKassa"""
+
+    # fmt: off
+    check_id: int = Field(..., description="Идентификатор чека") # noqa
+    # fmt: on
+
+
 class PaymentDbtPrint(PrintBaseEvent):
     """Распечатать приход"""
 
