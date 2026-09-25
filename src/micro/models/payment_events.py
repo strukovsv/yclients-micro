@@ -69,3 +69,9 @@ class PaymentMoneyPrint(PrintBaseEvent):
     """Распечатать приход и расход денежных средств"""
 
     pass
+
+
+class TwoCanPrint(PrintBaseEvent):
+    """Распечатать приходы 2Can"""
+
+    pass
