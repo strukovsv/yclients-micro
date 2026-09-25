@@ -75,3 +75,9 @@ class TwoCanPrint(PrintBaseEvent):
     """Распечатать приходы 2Can"""
 
     pass
+
+
+class DigitalKassaPrint(PrintBaseEvent):
+    """Распечатать чеки DigitalKassa"""
+
+    pass
