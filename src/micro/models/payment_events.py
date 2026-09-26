@@ -43,7 +43,7 @@ class DigitalKassaCheck(PaymentBaseClass):
     """Пришел новый чек из DigitalKassa"""
 
     # fmt: off
-    check_id: int = Field(..., description="Идентификатор чека") # noqa
+    check_id: str = Field(..., description="Идентификатор чека") # noqa
     # fmt: on
 
 
