@@ -7,7 +7,7 @@ from pydantic import Field
 from micro.models.header_event import HeaderEvent
 
 
-class AiEvent(HeaderEvent):
+class AiClientEvent(HeaderEvent):
 
     # fmt: off
     client_id: int = Field(..., description="Идентификатор клиента",)  # noqa
@@ -17,39 +17,31 @@ class AiEvent(HeaderEvent):
         return self.client_id
 
 
-class AiRequest(AiEvent):
-    """Входящее сообщение для AI"""
+class AiClientRequest(AiClientEvent):
+    """Входящее сообщение для AiClient от клиента"""
 
     # fmt: off
     text: str = Field(..., description="Входящее сообщение", )  # noqa
     # fmt: on
 
 
-class AiResponse(AiEvent):
-    """Исходящее сообщение от AI"""
+class AiClientResponse(AiClientEvent):
+    """Исходящее сообщение от AiClient клиенту"""
 
     # fmt: off
     output: dict = Field(..., description="Исходящее объект", )  # noqa
     # fmt: on
 
 
-class AiAnswer(AiEvent):
-    """AI ответил клиенту"""
+class AiClientHelp(AiClientEvent):
+    """AiClient проист помощи у администратора"""
 
     # fmt: off
     output: dict = Field(..., description="Исходящее объект", )  # noqa
     # fmt: on
 
 
-class AiHelp(AiEvent):
-    """AI проист помощи у администратора"""
-
-    # fmt: off
-    output: dict = Field(..., description="Исходящее объект", )  # noqa
-    # fmt: on
-
-
-class SignUpActivity(AiEvent):
+class SignUpActivity(AiClientEvent):
     """Записаться на занятие"""
 
     # fmt: off
@@ -57,7 +49,7 @@ class SignUpActivity(AiEvent):
     # fmt: on
 
 
-class UnsubscribeActivity(AiEvent):
+class UnsubscribeActivity(AiClientEvent):
     """Выписаться с занятия"""
 
     # fmt: off
@@ -65,7 +57,7 @@ class UnsubscribeActivity(AiEvent):
     # fmt: on
 
 
-class WillBeAbsent(AiEvent):
+class WillBeAbsent(AiClientEvent):
     """Клиент будет отсутствовать в это время"""
 
     # fmt: off
@@ -79,7 +71,7 @@ class WillBeAbsent(AiEvent):
     # fmt: on
 
 
-class AddClientToBlacklist(AiEvent):
+class AddClientToBlacklist(AiClientEvent):
     """Включить клиента в стоп лист"""
 
     # fmt: off
@@ -90,4 +82,30 @@ class AddClientToBlacklist(AiEvent):
     blacklist_stop: datetime | None = Field(
         default=None, description="Дата окончания периода отсутствия клиента"
     )
+    # fmt: on
+
+
+class AiStaffEvent(HeaderEvent):
+
+    # fmt: off
+    staff_id: int = Field(..., description="Идентификатор сотрудника",)  # noqa
+    # fmt: on
+
+    def route_key(self):
+        return self.staff_id
+
+
+class AiStaffRequest(AiStaffEvent):
+    """Входящее сообщение для Ai от сотрудника"""
+
+    # fmt: off
+    text: str = Field(..., description="Входящее сообщение", )  # noqa
+    # fmt: on
+
+
+class AiStaffResponse(AiStaffEvent):
+    """Исходящее сообщение от Ai сотруднику"""
+
+    # fmt: off
+    output: str = Field(..., description="Исходящее объект", )  # noqa
     # fmt: on
