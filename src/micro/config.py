@@ -149,6 +149,13 @@ IMOBIS_HTTP_PROXY = config.get("HTTP_PROXY", None)
 
 MAX_TOKEN = config.get("MAX_TOKEN", None)
 
+FROMNI_MESSENGER_URL = "https://messenger.fromni.ru"
+FROMNI_AUTH_ORIGIN = "https://auth.fromni.ru"
+FROMNI_TIMEOUT = 60
+FROMNI_SIGNIN_URL = "https://api.auth.fromni.ru/signin"
+FROMNI_EMAIL = "strukovsv@mail.ru"
+FROMNI_PASSWORD = "VLBUliEo51"
+
 
 def get_env(env_name: str):
     return config.get(env_name, None)
