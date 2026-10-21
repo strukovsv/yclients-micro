@@ -29,7 +29,7 @@ class AiClientResponse(AiClientEvent):
     """Исходящее сообщение от AiClient клиенту"""
 
     # fmt: off
-    output: dict = Field(..., description="Исходящее объект", )  # noqa
+    output: str = Field(..., description="Исходящее объект", )  # noqa
     # fmt: on
 
 
@@ -37,7 +37,7 @@ class AiClientHelp(AiClientEvent):
     """AiClient проист помощи у администратора"""
 
     # fmt: off
-    output: dict = Field(..., description="Исходящее объект", )  # noqa
+    output: str = Field(..., description="Исходящее объект", )  # noqa
     # fmt: on
 
 
