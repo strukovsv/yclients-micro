@@ -153,8 +153,8 @@ FROMNI_MESSENGER_URL = "https://messenger.fromni.ru"
 FROMNI_AUTH_ORIGIN = "https://auth.fromni.ru"
 FROMNI_TIMEOUT = 60
 FROMNI_SIGNIN_URL = "https://api.auth.fromni.ru/signin"
-FROMNI_EMAIL = "strukovsv@mail.ru"
-FROMNI_PASSWORD = "VLBUliEo51"
+FROMNI_EMAIL = config.get("FROMNI_EMAIL", None)
+FROMNI_PASSWORD = config.get("FROMNI_PASSWORD", None)
 
 
 def get_env(env_name: str):

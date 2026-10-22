@@ -20,7 +20,9 @@ def is_auth_redirect(r: httpx.Response) -> bool:
     """
     # Протухшая sess выглядит как 302 на /authorize (при follow_redirects=False)
     # или как HTML вместо JSON. Ловим оба случая, чтобы не падать на r.json().
-    return r.is_redirect or "application/json" not in r.headers.get("content-type", "")
+    return r.is_redirect or "application/json" not in r.headers.get(
+        "content-type", ""
+    )
 
 
 class Fromni(metaclass=MetaSingleton):
@@ -45,7 +47,10 @@ class Fromni(metaclass=MetaSingleton):
         """
         r = await self.client.post(
             config.FROMNI_SIGNIN_URL,  # https://api.auth.fromni.ru/signin
-            json={"email": config.FROMNI_EMAIL, "password": config.FROMNI_PASSWORD},
+            json={
+                "email": config.FROMNI_EMAIL,
+                "password": config.FROMNI_PASSWORD,
+            },
             headers={
                 # Auth-сервер проверяет Origin, без него отвечает "CORS checking error"
                 "Origin": config.FROMNI_AUTH_ORIGIN,  # https://auth.fromni.ru
@@ -59,7 +64,9 @@ class Fromni(metaclass=MetaSingleton):
 
         # Теперь в jar лежит connect.sid. Идём в мессенджер с редиректами:
         # messenger → /authorize (уйдёт connect.sid) → /callback?code → messenger ставит sess.
-        r = await self.client.get(config.FROMNI_MESSENGER_URL, follow_redirects=True)
+        r = await self.client.get(
+            config.FROMNI_MESSENGER_URL, follow_redirects=True
+        )
         logger.debug("fromni oauth chain: %s", [str(h.url) for h in r.history])
 
         # Если authorize показал consent-страницу вместо авто-редиректа,
@@ -70,7 +77,9 @@ class Fromni(metaclass=MetaSingleton):
             raise FromniAuthError("messenger session cookie not set")
         logger.info("fromni: session established")
 
-    async def messages(self, contact_id: str, limit: int = 20, offset: int = 0) -> dict:
+    async def messages(
+        self, contact_id: str, limit: int = 20, offset: int = 0
+    ) -> dict:
         """Получить сообщения контакта
 
         :param str contact_id: id контакта в fromni
@@ -85,19 +94,25 @@ class Fromni(metaclass=MetaSingleton):
             "order": [["id", "DESC"]],
             "offset": offset,
         }
-        r = await self._post_messenger("/api/user/messenger/contact/messages", payload)
+        r = await self._post_messenger(
+            "/api/user/messenger/contact/messages", payload
+        )
         # Сессия протухла: перелогиниваемся один раз. Это не retry сети,
         # а штатное восстановление сессии, иначе сервис встанет после истечения sess.
         if is_auth_redirect(r):
             logger.info("fromni: session expired, re-signin")
             await self.signin()
-            r = await self._post_messenger("/api/user/messenger/contact/messages", payload)
+            r = await self._post_messenger(
+                "/api/user/messenger/contact/messages", payload
+            )
             if is_auth_redirect(r):
                 raise FromniAuthError("still unauthorized after signin")
         r.raise_for_status()
         return r.json()
 
-    async def _post_messenger(self, path: str, payload: dict) -> httpx.Response:
+    async def _post_messenger(
+        self, path: str, payload: dict
+    ) -> httpx.Response:
         """POST в API мессенджера без следования редиректам
 
         :param str path: путь API
