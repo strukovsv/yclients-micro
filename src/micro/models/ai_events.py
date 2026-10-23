@@ -22,6 +22,7 @@ class AiClientRequest(AiClientEvent):
 
     # fmt: off
     text: str = Field(..., description="Входящее сообщение", )  # noqa
+    history: list[dict] | None = Field(None, description='Внешняя история [{"from": client|ai|operator, "text": ...}]', )  # noqa
     # fmt: on
 
 
