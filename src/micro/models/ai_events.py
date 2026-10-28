@@ -10,7 +10,7 @@ from micro.models.header_event import HeaderEvent
 class AiClientEvent(HeaderEvent):
 
     # fmt: off
-    client_id: int = Field(..., description="Идентификатор клиента",)  # noqa
+    client_id: str | int = Field(..., description="Идентификатор клиента",)  # noqa
     # fmt: on
 
     def route_key(self):
