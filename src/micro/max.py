@@ -7,7 +7,7 @@ import micro.config as config
 logger = logging.getLogger(__name__)
 
 
-async def send_max(chat_id: int, message: str):
+async def send_max(chat_id: int, message: str, format: str = None):
     """Отправить сообщение в телеграм
 
     :param str message: отправляемое сообщение
@@ -17,6 +17,8 @@ async def send_max(chat_id: int, message: str):
 
         url = f"https://platform-api.max.ru/messages?chat_id={chat_id}"
         payload = {"text": message}
+        if format:
+            payload["format"] = format
         headers = {
             "Content-Type": "application/json; charset=utf-8",
             "Authorization": config.MAX_TOKEN,

@@ -12,5 +12,9 @@ async def send_notification(channel: str, message: str):
         await send_max(
             chat_id=config.get_env("DLQ_MAX_GROUP_ID"), message=message
         )
+    elif channel.lower() == "ai":
+        await send_max(
+            chat_id=config.get_env("AI_MAX_GROUP_ID"), message=message
+        )
     else:
         raise Exception(f'Не задан канал нотификаций "{channel}"')
