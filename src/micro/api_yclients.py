@@ -24,6 +24,12 @@ IMOBIS_PAGE_COUNT = 10
 IMOBIS_TIMEOUT = 60.0
 
 
+async def sleep(timeout: int, message: str = "default"):
+    if timeout > 1.0:
+        logger.info(f"sleep {message}: {timeout}s")
+    await asyncio.sleep(timeout)
+
+
 class Yclients(metaclass=MetaSingleton):
 
     partner_token: str | None = None
@@ -254,13 +260,13 @@ class Yclients(metaclass=MetaSingleton):
                 last_exception = e
                 is_last_attempt = attempt == MAX_RETRIES - 1
 
-                if is_last_attempt:
+                if is_last_attempt or str(e) == "Не найдено":
                     break
 
-                logger.debug(
-                    f'attempt: "{attempt}", error: "{e}", url: "{full_url}"'
+                logger.info(
+                    f'attempt: "{attempt}", error: "{str(e)}", url: "{full_url}"'
                 )
-                await asyncio.sleep(10)
+                await sleep(10, "attempt")
 
         return self._handle_final_error(
             last_exception, method, full_url, params, client  # type: ignore
@@ -313,7 +319,7 @@ class Yclients(metaclass=MetaSingleton):
         context = f'url: "{method} {url}", response: "{response}", params: "{params}"'  # noqa
 
         if str(e) == "Не найдено":
-            logger.error(
+            logger.debug(
                 f'{context}, message: "Не найдено записей, вернуть []"'
             )
             return []
@@ -326,7 +332,7 @@ class Yclients(metaclass=MetaSingleton):
         remain = MIN_REQUEST_INTERVAL - elapsed
         if remain > 0:
             logger.debug(f"rate limit sleep: {remain:.3f}s")
-            await asyncio.sleep(remain)
+            await sleep(remain, "between")
 
     def imobis_get_transport(self) -> httpx.AsyncHTTPTransport | None:
         """Возвращает транспорт с прокси для Imobis, если задан в конфиге."""
@@ -456,7 +462,7 @@ class Yclients(metaclass=MetaSingleton):
                     logger.debug(
                         f'attempt: "{attempt}", error: "{e}", url: "{full_url}"'  # noqa
                     )
-                    await asyncio.sleep(10)
+                    await sleep(10, "attempt")
 
         return self._imobis_handle_final_error(
             last_exception, full_url, params  # type: ignore
@@ -927,7 +933,7 @@ class Yclients(metaclass=MetaSingleton):
         message: str,
         phone: str | None = None,
         contact_id: str | None = None,
-        is_mass_mailing: bool = False
+        is_mass_mailing: bool = False,
     ) -> str:
         """Отправить сообщение напрямую через Imobis.
 
@@ -951,7 +957,7 @@ class Yclients(metaclass=MetaSingleton):
         message: str,
         phone: str | None,
         contact_id: str | None,
-        is_mass_mailing: bool = False
+        is_mass_mailing: bool = False,
     ) -> dict:
         """Формирует тело запроса отправки сообщения с учётом окружения."""
         if config.production:

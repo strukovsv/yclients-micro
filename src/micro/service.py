@@ -27,7 +27,6 @@ from micro.kafka_producer import KafkaProducer
 from micro.status import Status
 from micro.schemes import Schema  # noqa
 from micro.models.common_events import InfoEvent, Live
-from micro.telegram import send_start_service
 
 from micro.kafka_consumer import event_handler
 
@@ -95,9 +94,7 @@ class BackgroundRunner:
                             logger.info("start task runner")
                             tg.create_task(app.runner(), name="runner")
                         # Событие запуска сервиса
-                        # Отправим независимо от жизни других сервисов,
-                        # непосредственно в телеграмм
-                        await send_start_service(service_name=app.summary)
+                        # TODO: отправить событие в kafka
                 except BaseException:
                     logger.error(traceback.format_exc())
                 finally:
