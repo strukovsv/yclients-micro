@@ -104,6 +104,15 @@ class AiStaffRequest(AiStaffEvent):
     # fmt: on
 
 
+class AiStaffVoiceRequest(AiStaffEvent):
+    """Входящее голосовое сообщение для Ai от сотрудника"""
+
+    # fmt: off
+    audio_base64: str = Field(..., description="Содержимое аудиофайла в Base64")  # noqa
+    mime_type: str = Field(..., description="MIME-тип аудиофайла")  # noqa
+    # fmt: on
+
+
 class AiStaffResponse(AiStaffEvent):
     """Исходящее сообщение от Ai сотруднику"""
 

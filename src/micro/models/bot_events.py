@@ -34,6 +34,21 @@ class TelegramMessageReceived(HeaderEvent):
         return f"{self.chat_id}"
 
 
+class TelegramVoiceReceived(HeaderEvent):
+    # Принято голосовое сообщение из канала telegram
+    # fmt: off
+    user: TelegramUser2
+    chat_id: int
+    audio_base64: str = Field(..., description="Содержимое аудиофайла в Base64")  # noqa
+    mime_type: str = Field(..., description="MIME-тип аудиофайла")  # noqa
+    message_id: int
+    topic_id: int | None = None
+    # fmt: on
+
+    def route_key(self):
+        return f"{self.chat_id}"
+
+
 class TelegramCallbackReceived(HeaderEvent):
     # Принято сообщение из канала telegram
     # fmt: off
