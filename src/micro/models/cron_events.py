@@ -582,7 +582,13 @@ class ReqLoadTwoCan(CronBaseClass):
     ...
 
 
+class OutboxFlush(CronBaseClass):
+    """Запрос доставки собственных outbox-очередей подписанных сервисов."""
+
+    pass
+
+
 class WorkerOutboxFlush(CronBaseClass):
-    """Запрос повторной доставки outbox сервиса worker."""
+    """Прежний запрос доставки worker; сохранён для совместимости с cron."""
 
     pass
