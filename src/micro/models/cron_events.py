@@ -580,3 +580,9 @@ class ReqLoadTwoCan(CronBaseClass):
     """Загрузить транзакции из 2Can"""
 
     ...
+
+
+class WorkerOutboxFlush(CronBaseClass):
+    """Запрос повторной доставки outbox сервиса worker."""
+
+    pass

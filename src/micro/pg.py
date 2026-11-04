@@ -1,4 +1,7 @@
 import logging
+from asyncio import current_task
+from contextlib import asynccontextmanager
+from contextvars import ContextVar
 import psycopg_pool
 from psycopg.rows import dict_row
 
@@ -10,8 +13,10 @@ from micro.metrics import PG_EXECUTE_CNT, PG_FETCHALL_CNT
 logger = logging.getLogger(__name__)
 
 
-class DB(metaclass=MetaSingleton):
+_connection = ContextVar("micro_pg_connection", default=None)
 
+
+class DB(metaclass=MetaSingleton):
     pool = None
 
     def __init__(self):
@@ -47,17 +52,41 @@ class DB(metaclass=MetaSingleton):
             self.pool = None
             logger.info("close pool db")
 
-    async def execute(self, query, params=None):
+    @asynccontextmanager
+    async def connection(self):
+        """Использовать соединение текущей транзакции или взять новое из pool."""
+        bound = _connection.get()
+        if bound is not None:
+            owner, database, conn = bound
+            if owner is not current_task() or database is not self:
+                raise RuntimeError(
+                    "Соединение транзакции нельзя передавать другой задаче"
+                )
+            yield conn
+            return
         await self.open_pool()
         async with self.pool.connection() as conn:
+            yield conn
+
+    @asynccontextmanager
+    async def transaction(self):
+        """Связать SQL-вызовы одной задачи; вложенный вызов создаёт savepoint."""
+        async with self.connection() as conn:
+            async with conn.transaction():
+                token = _connection.set((current_task(), self, conn))
+                try:
+                    yield conn
+                finally:
+                    _connection.reset(token)
+
+    async def execute(self, query, params=None):
+        async with self.connection() as conn:
             if isinstance(query, list):
                 async with conn.transaction():
                     async with conn.cursor() as acur:
                         for item in query:
                             PG_EXECUTE_CNT.inc()
-                            await acur.execute(
-                                item["sql"], item.get("params", {})
-                            )
+                            await acur.execute(item["sql"], item.get("params", {}))
                         return None
             else:
                 async with conn.cursor() as acur:
@@ -66,8 +95,7 @@ class DB(metaclass=MetaSingleton):
                     return acur.rowcount
 
     async def returning(self, query, params=None):
-        await self.open_pool()
-        async with self.pool.connection() as conn:
+        async with self.connection() as conn:
             if isinstance(query, list):
                 raise
             else:
@@ -77,8 +105,7 @@ class DB(metaclass=MetaSingleton):
                     return await acur.fetchone()
 
     async def fetchall(self, query, params=None):
-        await self.open_pool()
-        async with self.pool.connection() as conn:
+        async with self.connection() as conn:
             async with conn.cursor() as acur:
                 try:
                     await acur.execute(query, params)
@@ -96,7 +123,6 @@ class DB(metaclass=MetaSingleton):
 
 
 class DB2(metaclass=MetaSingleton):
-
     pool: dict = None
 
     def __init__(self):
@@ -121,7 +147,7 @@ class DB2(metaclass=MetaSingleton):
             _connect_string = connect_string
         else:
             _connect_string = self.postgres_conninfo()
-        logger.info(f'{connect_string=} {_connect_string=}')
+        logger.info(f"{connect_string=} {_connect_string=}")
         if self.pool.get(_connect_string) is None:
             # Подключить pool соединений с Postgres
             pool = psycopg_pool.AsyncConnectionPool(
@@ -155,9 +181,7 @@ class DB2(metaclass=MetaSingleton):
                     async with conn.cursor() as acur:
                         for item in query:
                             PG_EXECUTE_CNT.inc()
-                            await acur.execute(
-                                item["sql"], item.get("params", {})
-                            )
+                            await acur.execute(item["sql"], item.get("params", {}))
                         return None
             else:
                 async with conn.cursor() as acur:

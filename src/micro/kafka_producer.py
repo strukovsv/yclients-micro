@@ -1,6 +1,8 @@
 import logging
 import json
 import asyncio
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import datetime, date, time, timedelta
 from typing import Any
 
@@ -74,8 +76,23 @@ def serialize_datetime(obj: Any) -> str | float:
     )
 
 
-class KafkaProducer(metaclass=MetaSingleton):
+_deferred_sender = ContextVar("micro_kafka_deferred_sender", default=None)
 
+
+@contextmanager
+def defer_kafka(sender):
+    """Перехватить готовые сообщения только в текущем контексте транзакции.
+
+    :param callable sender: async-функция записи topic/key/value в outbox.
+    """
+    token = _deferred_sender.set((asyncio.current_task(), sender))
+    try:
+        yield
+    finally:
+        _deferred_sender.reset(token)
+
+
+class KafkaProducer(metaclass=MetaSingleton):
     producer: AIOKafkaProducer = None
 
     async def start(self, topic: str):
@@ -84,16 +101,30 @@ class KafkaProducer(metaclass=MetaSingleton):
                 **config.PRODUCER_KAFKA,
             )
             logger.info(f"connect producer kafka: {config.PRODUCER_KAFKA}")
-            await self.producer.start()
+            producer = self.producer
+            try:
+                await producer.start()
+            except BaseException:
+                self.producer = None
+                try:
+                    await producer.stop()
+                except Exception:
+                    logger.exception("Ошибка закрытия не запущенного Kafka producer")
+                raise
 
-    async def send_kafka_topic_value(
-        self, topic: str, key: any, value
-    ) -> None:
+    async def send_kafka_topic_value(self, topic: str, key: any, value) -> None:
         """Отправить сообщение в заданный topic
 
         :param any key: route key
         :param dict data: сообщение
         """
+        deferred = _deferred_sender.get()
+        if deferred is not None:
+            owner, sender = deferred
+            if owner is not asyncio.current_task():
+                raise RuntimeError("Публикация outbox должна идти в задаче транзакции")
+            await sender(topic=topic, key=str(key) if key else None, value=value)
+            return
         if not self.producer:
             await self.start(topic)
         try:
@@ -127,9 +158,7 @@ class KafkaProducer(metaclass=MetaSingleton):
             ).encode(),
         )
 
-    async def send_kafka(
-        self, key: any, data: dict, topic: str = None
-    ) -> None:
+    async def send_kafka(self, key: any, data: dict, topic: str = None) -> None:
         """Отправить сообщение в topic
         по умолчанию
 
@@ -182,8 +211,6 @@ class KafkaProducer(metaclass=MetaSingleton):
                 # Обратно получить dict из объекта
                 js = result.dict()
             except Exception as e:
-                logger.error(
-                    f'Ошибка "{e}" валидации сообщения "{js}" по типу "{obj}"'
-                )
+                logger.error(f'Ошибка "{e}" валидации сообщения "{js}" по типу "{obj}"')
         # Отправить сообщение
         await self.send_kafka(key=key if key else "na", data=js)
