@@ -267,3 +267,8 @@ Kafka и PostgreSQL для них не нужны. Настроек линтер
 - `Dockerfile` и `docker-compose.yaml` содержат вспомогательное окружение;
   текущая команда Compose запускает `tests/test_diff.py`. Перед сборкой нужно
   исправить некорректный тег базового образа в `Dockerfile`.
+
+
+## График платежей
+
+Добавлен PaymentScheduleRun (notify: bool), зарегистрирован в Schema. create(data=job.args) совместим с jobs. InfoEvent не изменён. Новых сервисов и outbox нет.

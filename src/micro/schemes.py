@@ -5,6 +5,7 @@ import sys
 from micro.singleton import MetaSingleton
 from pydantic import BaseModel
 
+import micro.models.payment_schedule_events  # noqa
 import micro.models.system_events  # noqa
 import micro.models.bot_events  # noqa
 import micro.models.common_events  # noqa
